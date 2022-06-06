@@ -1,0 +1,11 @@
+ArbolProceso\IElementoAB.class
+com\mycompany\sistemas_operativos_obligatorio\SISTEMAS_OPERATIVOS_OBLIGATORIO.class
+ListaProcesos\ListaProcesos.class
+Procesos\Proceso.class
+ListaProcesos\Nodo.class
+ArbolProceso\INodo.class
+ArbolProceso\TElementoAB.class
+ArbolProceso\Nodo.class
+ArbolProceso\IArbolAVL.class
+ArbolProceso\TArbolAVL.class
+Planificador\Planificador.class
