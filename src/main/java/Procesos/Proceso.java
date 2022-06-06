@@ -59,8 +59,8 @@ public class Proceso {
     public boolean ejecutarCicloEnBloqueo(){
         this.valoresEjecucionProceso[2] -= 1;
         if(this.valoresEjecucionProceso[2] == 0){
-            this.valoresEjecucionProceso[2] = this.duracionES;
             this.valoresEjecucionProceso[1] = this.tiempoCorteES;
+            this.valoresEjecucionProceso[2] = this.duracionES;
             return true;
         }
         return false;

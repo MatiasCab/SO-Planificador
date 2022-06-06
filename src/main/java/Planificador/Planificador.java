@@ -81,9 +81,15 @@ public class Planificador { //Esta clase tiene que ser singleton
     }
     
     public void ingresarProcesos(LinkedList<Proceso> procesosNuevos){
-        for (Proceso i : procesosNuevos){
-            colaDeEjecucion[0].insertar(i.getPrioridad(), i);
+        
+        for (Proceso p : procesosNuevos){
+            if(p.isOfSO()){
+                colaDeEjecucion[0].insertar(p.getPrioridad() + 100, p);
+            }else{
+                colaDeEjecucion[0].insertar(p.getPrioridad(), p);
+            }
         }
+        
     }
     
     public void ejecutarCiclo(){
@@ -115,43 +121,43 @@ public class Planificador { //Esta clase tiene que ser singleton
                 this.tiempoDeEjecucionActual = this.tiempoDeEjecucion;
             }
         }
+        if(this.enEjecucion == null){
+            seleccionarProceso();
+        }
         
+    }
+    
+    private void seleccionarProceso(){
         for (int i = 0; i < 2; i++){
-            if (this.enEjecucion == null){
-                this.tiempoDeEjecucionActual = this.tiempoDeEjecucion;
-                if (!this.colaDeEjecucion[0].esVacia()){
-                    this.enEjecucion = this.colaDeEjecucion[0].getPrimero().getDato();
-                    this.colaDeEjecucion[0].eliminar(this.enEjecucion.getID());
-                    break;
-                }else if(!this.colaDeEjecucion[2].esVacia()){
-                    this.enEjecucion = this.colaDeEjecucion[2].getPrimero().getDato();
-                    this.colaDeEjecucion[2].eliminar(this.enEjecucion.getID());
-                    break;
-                }else if(!this.colaDeEjecucion[3].esVacia()){
-                    this.enEjecucion = this.colaDeEjecucion[3].getPrimero().getDato();
-                    this.colaDeEjecucion[3].eliminar(this.enEjecucion.getID());
-                    break;
+            this.tiempoDeEjecucionActual = this.tiempoDeEjecucion;
+            if (!this.colaDeEjecucion[0].esVacia()){
+                this.enEjecucion = this.colaDeEjecucion[0].eliminarUltimo();
+                break;
+            }else if(!this.colaDeEjecucion[2].esVacia()){
+                this.enEjecucion = this.colaDeEjecucion[2].eliminarUltimo();
+                break;
+            }else if(!this.colaDeEjecucion[3].esVacia()){
+                this.enEjecucion = this.colaDeEjecucion[3].eliminarUltimo();
+                break;
+            }else{
+                if(this.colaProcesos2[1] == null){
+                    this.colaProcesos2[1] = this.colaProcesos1[1];
+                    this.colaDeEjecucion = this.colaProcesos2;
+                    this.colaDeExpirados = this.colaProcesos1;
+                    this.colaProcesos1[1] = null;
                 }else{
-                    if(this.colaProcesos2[1] == null){
-                        this.colaProcesos2[1] = this.colaProcesos1[1];
-                        this.colaDeEjecucion = this.colaProcesos2;
-                        this.colaDeExpirados = this.colaProcesos1;
-                        this.colaProcesos1[1] = null;
-                    }else{
-                        this.colaProcesos1[1] = this.colaProcesos2[1];
-                        this.colaDeEjecucion = this.colaProcesos1;
-                        this.colaDeExpirados = this.colaProcesos2;
-                        this.colaProcesos2[1] = null;
-                    }
+                    this.colaProcesos1[1] = this.colaProcesos2[1];
+                    this.colaDeEjecucion = this.colaProcesos1;
+                    this.colaDeExpirados = this.colaProcesos2;
+                    this.colaProcesos2[1] = null;
                 }
-            }else { break; }
+            }
         }
     }
     
     private void actualizarBloqueados(){
         ArrayList<Proceso> listaBloqueados = this.colaDeEjecucion[1].toArray();
         for(Proceso p : listaBloqueados){
-            p.ejecutarCicloEnBloqueo();
             if(p.ejecutarCicloEnBloqueo()){
                 this.colaDeEjecucion[1].eliminar(p.getID());
                 if(p.isOfSO()){

@@ -61,7 +61,7 @@ public class ListaProcesos {
         Nodo nodoActual = primero;
         Nodo ultimoNodo = primero;
         while (nodoActual != null){
-            if (nuevoNodo.getEtiqueta().compareTo(nodoActual.getEtiqueta()) < 0){
+            if (nuevoNodo.getEtiqueta().compareTo(nodoActual.getEtiqueta()) <= 0){
                 nuevoNodo.setAnterior(nodoActual.getAnterior());
                 nuevoNodo.setSiguiente(nodoActual);
                 nodoActual.setAnterior(nuevoNodo);
@@ -103,6 +103,23 @@ public class ListaProcesos {
         
     public Nodo getPrimero() {
         return primero;
+    }
+    
+    public Proceso eliminarUltimo(){
+        if(esVacia()){
+            return null;
+        }
+        Proceso ultimoProceso = ultimo.getDato();
+        if(tamaño == 1){
+            ultimo = null;
+            primero = null;
+            tamaño--;
+            return ultimoProceso;
+        }
+        ultimo = ultimo.getAnterior();
+        ultimo.setSiguiente(null);
+        tamaño--;
+        return ultimoProceso;
     }
     
     public Nodo getUltimo() {
