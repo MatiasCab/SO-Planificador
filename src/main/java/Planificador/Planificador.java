@@ -14,14 +14,15 @@ import ListaProcesos.*;
 public class Planificador { //Esta clase tiene que ser singleton
     
     public HashMap<Integer, Proceso> procesos = new HashMap<>();
-    public Proceso enEjecucion;
+    public ArrayList<CPU> CPUs = new ArrayList();
     public ListaProcesos[] colaProcesos1 = new ListaProcesos[4];
     public ListaProcesos[] colaProcesos2 = new ListaProcesos[4];
     public ListaProcesos bloqueadosPorUsuario = new ListaProcesos();
+    public ListaProcesos bloqueadosPorES = new ListaProcesos();
     
-    public int tiempoDeEjecucion;
     
-    private int tiempoDeEjecucionActual;
+    public int tiempoDeEjecucion = 0;
+    
     
     private ListaProcesos[] colaDeEjecucion;
     
@@ -43,7 +44,6 @@ public class Planificador { //Esta clase tiene que ser singleton
         colaProcesos2[3] = new ListaProcesos();
         
         this.tiempoDeEjecucion = tiempoDeEjecucion;
-        this.tiempoDeEjecucionActual = tiempoDeEjecucion;
     }
     
     public boolean modificarPrioridad(int idProceso, int prioridad){
@@ -77,68 +77,43 @@ public class Planificador { //Esta clase tiene que ser singleton
         }
         this.bloqueadosPorUsuario.insertar(proceso.getPrioridad(), proceso);
         return true;
-        
     }
     
     public void ingresarProcesos(LinkedList<Proceso> procesosNuevos){
-        
         for (Proceso p : procesosNuevos){
             if(p.isOfSO()){
-                colaDeEjecucion[0].insertar(p.getPrioridad() + 100, p);
-            }else{
                 colaDeEjecucion[0].insertar(p.getPrioridad(), p);
+            }else{
+                colaDeEjecucion[1].insertar(p.getPrioridad(), p);
             }
         }
-        
+    }
+    
+    public void crearCPUs(int cantidad){
+        for (int i = 0; i < cantidad; i++){
+            this.CPUs.add(new CPU(this.tiempoDeEjecucion));
+        }
     }
     
     public void ejecutarCiclo(){
-        
-        if (this.enEjecucion != null){
-            
-            this.enEjecucion.ejecutarCiclo();
-            actualizarBloqueados();
-            this.tiempoDeEjecucionActual--;
-            
-            if (this.enEjecucion.getValoresEjecucionProceso()[0] == 0){
-                this.enEjecucion = null;
-                this.tiempoDeEjecucionActual = this.tiempoDeEjecucion;
-            } else if (this.enEjecucion.getValoresEjecucionProceso()[1] == 0){
-                this.colaDeEjecucion[1].insertar(this.enEjecucion.getValoresEjecucionProceso()[2], this.enEjecucion);
-                this.enEjecucion.setUltimoCorteCPU(false);
-                this.enEjecucion = null;
-                this.tiempoDeEjecucionActual = this.tiempoDeEjecucion;
-            } else if (this.tiempoDeEjecucionActual == 0 && this.enEjecucion != null){
-                this.enEjecucion.setUltimoCorteCPU(true);
-                if (this.enEjecucion.isOfSO()){
-                    this.colaDeExpirados[0].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
-                }else if (this.enEjecucion.getUltimoCortePorCPU()) {
-                    this.colaDeExpirados[3].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
-                }else{
-                    this.colaDeExpirados[2].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
-                }
-                this.enEjecucion = null;
-                this.tiempoDeEjecucionActual = this.tiempoDeEjecucion;
-            }
+        for (CPU c : this.CPUs){
+            if(!c.ejecutarCiclo(this.tiempoDeEjecucion, this.colaDeExpirados, this.bloqueadosPorES)){
+                c.asignarProceso(seleccionarProceso());
+            }    
         }
-        if(this.enEjecucion == null){
-            seleccionarProceso();
-        }
-        
+        actualizarBloqueados();
     }
     
-    private void seleccionarProceso(){
+    public Proceso seleccionarProceso(){
         for (int i = 0; i < 2; i++){
-            this.tiempoDeEjecucionActual = this.tiempoDeEjecucion;
             if (!this.colaDeEjecucion[0].esVacia()){
-                this.enEjecucion = this.colaDeEjecucion[0].eliminarUltimo();
-                break;
+                return this.colaDeEjecucion[0].eliminarUltimo();
+            }else if(!this.colaDeEjecucion[1].esVacia()){
+                return this.colaDeEjecucion[1].eliminarUltimo();
             }else if(!this.colaDeEjecucion[2].esVacia()){
-                this.enEjecucion = this.colaDeEjecucion[2].eliminarUltimo();
-                break;
+                return this.colaDeEjecucion[2].eliminarUltimo();
             }else if(!this.colaDeEjecucion[3].esVacia()){
-                this.enEjecucion = this.colaDeEjecucion[3].eliminarUltimo();
-                break;
+                return this.colaDeEjecucion[3].eliminarUltimo();
             }else{
                 if(this.colaProcesos2[1] == null){
                     this.colaProcesos2[1] = this.colaProcesos1[1];
@@ -153,17 +128,18 @@ public class Planificador { //Esta clase tiene que ser singleton
                 }
             }
         }
+        return null;
     }
     
     private void actualizarBloqueados(){
         ArrayList<Proceso> listaBloqueados = this.colaDeEjecucion[1].toArray();
         for(Proceso p : listaBloqueados){
             if(p.ejecutarCicloEnBloqueo()){
-                this.colaDeEjecucion[1].eliminar(p.getID());
+                this.bloqueadosPorES.eliminar(p.getID());
                 if(p.isOfSO()){
                     this.colaDeExpirados[0].insertar(p.getPrioridad(), p);
                 }else{
-                    this.colaDeExpirados[2].insertar(p.getPrioridad(), p);
+                    this.colaDeExpirados[3].insertar(p.getPrioridad(), p);
                 }
             }
         }
