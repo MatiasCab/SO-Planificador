@@ -24,6 +24,10 @@ public class CPU {
         return this.enEjecucion;
     }
     
+    public int getTiempoDeEjecucionActual(){
+        return this.tiempoEjecucionActual;
+    }
+    
     public void asignarProceso(Proceso proceso){
         this.enEjecucion = proceso;
     }
@@ -45,15 +49,15 @@ public class CPU {
                 return false;
             } else if (this.enEjecucion.getValoresEjecucionProceso()[1] == 0){
                 bloqueados.insertar(this.enEjecucion.getValoresEjecucionProceso()[2], this.enEjecucion);
-                this.enEjecucion.setUltimoCorteCPU(false);
+                this.enEjecucion.addEstadisticasData(false);
                 this.enEjecucion = null;
                 this.tiempoEjecucionActual = tiempoDeEjecucion;
                 return false;
             } else if (this.tiempoEjecucionActual == 0){
-                this.enEjecucion.setUltimoCorteCPU(true);
+                this.enEjecucion.addEstadisticasData(true);
                 if (this.enEjecucion.isOfSO()){
                     colaDeExpirados[0].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
-                }else if (this.enEjecucion.getUltimoCortePorCPU()) {
+                }else if (this.enEjecucion.isLimitedForCPU()) {
                     colaDeExpirados[2].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
                 }else{
                     colaDeExpirados[3].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
@@ -66,6 +70,5 @@ public class CPU {
         }else{
             return false;
         }
-    }
-    
+    } 
 }

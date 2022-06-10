@@ -3,6 +3,8 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package Procesos;
+import java.util.List;
+import java.util.LinkedList;
 
 /**
  *
@@ -26,7 +28,7 @@ public class Proceso {
     
     private int duracionES;
     
-    private boolean ultimoCortePorCPU;
+    private LinkedList<Boolean> datosCortes = new LinkedList<>();
     
     private int[] valoresEjecucionProceso = new int[3];
     
@@ -39,7 +41,7 @@ public class Proceso {
         this.duracionES = duracionES;
         this.iD = IDENTIFICADOR_PROCESOS++;   
         this.valoresEjecucionProceso[0] = duracion;
-        this.valoresEjecucionProceso[1] = (tiempoCorteES == 0 ? duracion + 1 : tiempoCorteES);
+        this.valoresEjecucionProceso[1] = (tiempoCorteES == 0 ? -1 : tiempoCorteES);
         this.valoresEjecucionProceso[2] = duracionES;
     }
     
@@ -70,6 +72,14 @@ public class Proceso {
         return this.iD;
     }
     
+    public String getNombre(){
+        return this.nombre;
+    }
+    
+    public int getDuracion(){
+        return this.duracion;
+    }
+    
     public int getPrioridad(){
         return this.prioridad;
     }
@@ -78,16 +88,40 @@ public class Proceso {
         return this.isOfSO;
     }
     
+    public int getTiemporCorteES(){
+        return this.tiempoCorteES;
+    }
+    
+    public int getDuracionES(){
+        return this.duracionES;
+    }
+    
     public int[] getValoresEjecucionProceso(){
         return this.valoresEjecucionProceso;
     }
     
-    public void setUltimoCorteCPU(boolean fuePorCPU){
-        this.ultimoCortePorCPU = fuePorCPU;
+    public void addEstadisticasData(boolean fuePorCPU){
+        if (this.datosCortes.size() == 10){
+            this.datosCortes.removeFirst();
+            this.datosCortes.addLast(fuePorCPU);
+        }else{
+            this.datosCortes.addLast(fuePorCPU);
+        }
     }
     
-    public boolean getUltimoCortePorCPU(){
-        return this.ultimoCortePorCPU;
+    public boolean isLimitedForCPU(){
+        int balanceCPUYES = 0;
+        for(boolean bool : this.datosCortes){
+            if(bool){
+                balanceCPUYES++;
+            }else{
+                balanceCPUYES--;
+            }
+        }
+        if (balanceCPUYES == 0){
+            return this.datosCortes.getFirst();
+        }
+        return balanceCPUYES > 0;
     }
     
 }

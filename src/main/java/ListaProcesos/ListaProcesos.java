@@ -35,9 +35,13 @@ public class ListaProcesos {
                 if (iDProceso.compareTo(identificadorProceso) == 0){
                     if(nodoActual.getAnterior() != null){
                         nodoActual.getAnterior().setSiguiente(nodoActual.getSiguiente());
+                    }else{
+                        this.primero = nodoActual.getSiguiente();
                     }
                     if(nodoActual.getSiguiente() != null){
                         nodoActual.getSiguiente().setAnterior(nodoActual.getAnterior());
+                    }else{
+                        this.ultimo = nodoActual.getAnterior();
                     }
                     nodoActual.setSiguiente(null);
                     nodoActual.setAnterior(null);
@@ -67,6 +71,8 @@ public class ListaProcesos {
                 nodoActual.setAnterior(nuevoNodo);
                 if (nuevoNodo.getAnterior() != null){
                     nuevoNodo.getAnterior().setSiguiente(nuevoNodo);
+                }else{
+                    this.primero = nuevoNodo;
                 }
                 return;
             }
@@ -76,13 +82,14 @@ public class ListaProcesos {
         nuevoNodo.setAnterior(ultimoNodo);
         nuevoNodo.setSiguiente(null);
         ultimoNodo.setSiguiente(nuevoNodo);
+        this.ultimo = nuevoNodo;
     }
     
     public ArrayList<Proceso> toArray(){
-        if (this.esVacia()) {
-           return null;
+        ArrayList<Proceso> nuevaLista = new ArrayList(this.tamaño);
+        if (esVacia()) {
+           return nuevaLista;
         } else {
-            ArrayList<Proceso> nuevaLista = new ArrayList(this.tamaño);
             Nodo nodoActual = this.primero;
             while (nodoActual != null) {
                 nuevaLista.add(nodoActual.getDato());
@@ -122,8 +129,15 @@ public class ListaProcesos {
         return ultimoProceso;
     }
     
-    public Nodo getUltimo() {
-        return ultimo;
+    public Proceso getUltimo() {
+        if(!esVacia()){
+            return ultimo.getDato();
+        }
+        return null;
+    }
+    
+    public int size(){
+        return this.tamaño;
     }
     
     
