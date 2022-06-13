@@ -13,9 +13,11 @@ com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$25.class
 com\mycompany\sistemas_operativos_obligatorio\CreadorProcesos$1.class
 com\mycompany\sistemas_operativos_obligatorio\Creador_CPUs$1.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$39.class
+com\mycompany\sistemas_operativos_obligatorio\RenderEjecucion.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$8.class
 ArbolProceso\Nodo.class
 com\mycompany\sistemas_operativos_obligatorio\CreadorProcesos$7.class
+com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$42.class
 Planificador\Planificador.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$18.class
 com\mycompany\sistemas_operativos_obligatorio\CreadorProcesos$3.class
@@ -33,6 +35,7 @@ ArbolProceso\TArbolAVL.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$38.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$23.class
 com\mycompany\sistemas_operativos_obligatorio\Creador_CPUs.class
+com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$43.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$40.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$17.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$27.class

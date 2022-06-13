@@ -9,11 +9,17 @@ import java.awt.event.ActionListener;
 import javax.swing.Timer;
 import Procesos.Proceso;
 import java.awt.Color;
+import java.awt.Component;
 import java.util.LinkedList;
 import javax.swing.table.DefaultTableModel;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableCellRenderer;
 /**
  *
  * @author matia
@@ -49,11 +55,15 @@ public final class VistaPlanificador extends javax.swing.JFrame {
     ActionListener ejecutarCiclo = new ActionListener(){
         @Override
         public void actionPerformed(ActionEvent e) {
-            instancePlanificador.ejecutarCiclo();
+            try {
+                instancePlanificador.ejecutarCiclo();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(VistaPlanificador.class.getName()).log(Level.SEVERE, null, ex);
+            }
             ventanaPlani.cantidadCiclos++;
             ventanaPlani.actualizarTablaEjecucion();
             ventanaPlani.actualizarVentanasDatos();
-            ventanaPlani.actualiazarDatosCriticos();
+            ventanaPlani.actualiazarDatosCriticos(false);
             System.out.println("POOM");
         }
     };
@@ -158,23 +168,22 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         colaCPU2.setText("COLA DE EJECUCION");
         colaCPU2.setBackground(Color.green);
         
-        tablaEjecucion.setEnabled(false);
-        
-        
         
         desabilitarBotones();
     }
     
-    private void actualiazarDatosCriticos(){
+    private void actualiazarDatosCriticos(boolean suspendidos){
         ventanaPlani.actualizarTablasColas();
         ventanaPlani.obtenerProximoProceso();
         ventanaPlani.actualizarTablaBloqueados();
-        ventanaPlani.actualizarTablaSuspendidos();
-        ventanaPlani.actualizarBarrasDatos();
+        if(suspendidos){
+            ventanaPlani.actualizarTablaSuspendidos();
+        }
         ventanaPlani.desabilitarBotones();
+        ventanaPlani.actualizarBarrasDatos();
     }
     
-    public void agregarProcesos(LinkedList<Proceso> listaProcesos){
+    public void agregarProcesos(LinkedList<Proceso> listaProcesos) throws InterruptedException{
         this.instancePlanificador.ingresarProcesos(listaProcesos);
         if(!this.isVisible()){
             this.setVisible(true);
@@ -236,6 +245,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 datos[8] = instancePlanificador.getTiempoEjecucionRestanteProceso(contador - 1);
             }
             tablaProcesosEjecucion.addRow(datos);
+            tablaEjecucion.getColumnModel().getColumn(6).setCellRenderer(new RenderEjecucion());
             contador++;
         }
     }
@@ -272,6 +282,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             datos[3] = p.getPrioridad();
             datos[4] = (-(((p.getValoresEjecucionProceso()[0] * 100) / p.getDuracion())-100) + "%");
             tablaProcesosSuspendidos.addRow(datos);
+            tablaProcesosSuspendidosInicial.getColumnModel().getColumn(4).setCellRenderer(new RenderEjecucion());
         }
     }
     
@@ -287,76 +298,77 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         if(colaCPU1.getText().equals("COLA EXPIRADOS")){
             
             ArrayList<Proceso> colaProceso = instancePlanificador.getColaDeExpiradosSO();
-            actualizarTablaColaProcesos(tablaProcesosSOA, colaProceso);
+            actualizarTablaColaProcesos(colaSOA, colaProceso, true);
             barraProgresoSOA.setMaximum(colaProceso.size());
             barraProgresoSOA.setValue(colaProceso.size());
             
-            actualizarTablaColaProcesos(tablaProcesosNuevosA, null);
+            actualizarTablaColaProcesos(colaNuevosA, null, false);
                     
             colaProceso = instancePlanificador.getColaDeExpiradosLimitadosCPU();
-            actualizarTablaColaProcesos(tablaProcesosCPUA, colaProceso);
+            actualizarTablaColaProcesos(colaCPUA, colaProceso, true);
             barraProgresoCPUA.setMaximum(colaProceso.size());
             barraProgresoCPUA.setValue(colaProceso.size());
                         
             colaProceso = instancePlanificador.getColaDeExpiradosLimitadosES();
-            actualizarTablaColaProcesos(tablaProcesosESA, colaProceso);
+            actualizarTablaColaProcesos(colaESA, colaProceso, true);
             barraProgresoESA.setMaximum(colaProceso.size());
             barraProgresoESA.setValue(colaProceso.size());
             
             colaProceso = instancePlanificador.getColaDejecucionSO();
-            actualizarTablaColaProcesos(tablaProcesosSOB, colaProceso);
+            actualizarTablaColaProcesos(colaSOB, colaProceso, false);
             barraProgresoSOB.setValue(colaProceso.size());
             
             colaProceso = instancePlanificador.getColaDejecucionNuevos();
-            actualizarTablaColaProcesos(tablaProcesosNuevosB, colaProceso);
+            actualizarTablaColaProcesos(colaNuevosB, colaProceso, true);
             barraProgresoNuevosB.setValue(colaProceso.size());
             
             colaProceso = instancePlanificador.getColaDejecucionLimitadosCPU();
-            actualizarTablaColaProcesos(tablaProcesosCPUB, colaProceso);
+            actualizarTablaColaProcesos(colaCPUB, colaProceso, false);
             barraProgresoCPUB.setValue(colaProceso.size());
             
             colaProceso = instancePlanificador.getColaDejecucionLimitadosES();
-            actualizarTablaColaProcesos(tablaProcesosESB, colaProceso);
+            actualizarTablaColaProcesos(colaESB, colaProceso, false);
             barraProgresoESB.setValue(colaProceso.size());
             
         }else{
             
             ArrayList<Proceso> colaProceso = instancePlanificador.getColaDeExpiradosSO();
-            actualizarTablaColaProcesos(tablaProcesosSOB, colaProceso);
+            actualizarTablaColaProcesos(colaSOB, colaProceso, true);
             barraProgresoSOB.setMaximum(colaProceso.size());
             barraProgresoSOB.setValue(colaProceso.size());
             
-            actualizarTablaColaProcesos(tablaProcesosNuevosB, null);
+            actualizarTablaColaProcesos(colaNuevosB, null, false);
                     
             colaProceso = instancePlanificador.getColaDeExpiradosLimitadosCPU();
-            actualizarTablaColaProcesos(tablaProcesosCPUB, colaProceso);
+            actualizarTablaColaProcesos(colaCPUB, colaProceso, true);
             barraProgresoCPUB.setMaximum(colaProceso.size());
             barraProgresoCPUB.setValue(colaProceso.size());
                         
             colaProceso = instancePlanificador.getColaDeExpiradosLimitadosES();
-            actualizarTablaColaProcesos(tablaProcesosESB, colaProceso);
+            actualizarTablaColaProcesos(colaESB, colaProceso, true);
             barraProgresoESB.setMaximum(colaProceso.size());
             barraProgresoESB.setValue(colaProceso.size());
             
             colaProceso = instancePlanificador.getColaDejecucionSO();
-            actualizarTablaColaProcesos(tablaProcesosSOA, colaProceso);
+            actualizarTablaColaProcesos(colaSOA, colaProceso, false);
             barraProgresoSOA.setValue(colaProceso.size());
             
             colaProceso = instancePlanificador.getColaDejecucionNuevos();
-            actualizarTablaColaProcesos(tablaProcesosNuevosA, colaProceso);
+            actualizarTablaColaProcesos(colaNuevosA, colaProceso, true);
             barraProgresoNuevosA.setValue(colaProceso.size());
             
             colaProceso = instancePlanificador.getColaDejecucionLimitadosCPU();
-            actualizarTablaColaProcesos(tablaProcesosCPUA, colaProceso);
+            actualizarTablaColaProcesos(colaCPUA, colaProceso, false);
             barraProgresoCPUA.setValue(colaProceso.size());
             
             colaProceso = instancePlanificador.getColaDejecucionLimitadosES();
-            actualizarTablaColaProcesos(tablaProcesosESA, colaProceso);
+            actualizarTablaColaProcesos(colaESA, colaProceso, false);
             barraProgresoESA.setValue(colaProceso.size());
         }
     }
     
-    public void actualizarTablaColaProcesos(DefaultTableModel tabla, ArrayList<Proceso> listaProcesos){
+    public void actualizarTablaColaProcesos(JTable tablaInicial, ArrayList<Proceso> listaProcesos, boolean expirada ){
+        DefaultTableModel tabla = (DefaultTableModel) tablaInicial.getModel();
         int filas = tabla.getRowCount();
         for(int i = filas - 1; i >= 0; i--){
             tabla.removeRow(i);
@@ -372,8 +384,20 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 datos[4] = (-(((p.getValoresEjecucionProceso()[0] * 100) / p.getDuracion())-100) + "%");
                 datos[5] = p.getTiemporCorteES();
                 tabla.addRow(datos);
+                tablaInicial.getColumnModel().getColumn(4).setCellRenderer(new RenderEjecucion());
             }  
+            /*
+            DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer();
+            if(expirada & (tabla.getRowCount() - filas > 0)){
+                cellRenderer.setBackground(new Color(0, 153, 0));
+            }else{
+                cellRenderer.setBackground(new Color(204, 255, 255));
+            }
+            for(int i=0;i<tablaInicial.getColumnCount();i++){
+                tablaInicial.getTableHeader().getColumnModel().getColumn(i).setHeaderRenderer(cellRenderer);   
+            }*/
         }
+        
     }
     
     public void inicializarBarrasColas(String tipo){
@@ -539,9 +563,35 @@ public final class VistaPlanificador extends javax.swing.JFrame {
     }
     
     public void desabilitarBotones(){
-        if(idDelProcesosAInteractuar.getText().equals("")){
+        boolean pasa = true;
+        botonDesuspenderProceso.setEnabled(false);
+        if(!idDelProcesosAInteractuar.getText().equals("")){
+            pasa = false;
+            botonDesuspenderProceso.setEnabled(true);
+        }else if(colaSOA.getSelectedRow() != -1){
+            pasa = false;
+        }else if(colaSOB.getSelectedRow() != -1){
+            pasa = false;
+        }else if(colaNuevosA.getSelectedRow() != -1){
+            pasa = false;
+        }else if(colaNuevosB.getSelectedRow() != -1){
+            pasa = false;
+        }else if(colaCPUA.getSelectedRow() != -1){
+            pasa = false;
+        }else if(colaCPUB.getSelectedRow() != -1){
+            pasa = false;
+        }else if(colaESB.getSelectedRow() != -1){
+            pasa = false;
+        }else if(colaESA.getSelectedRow() != -1){
+            pasa = false;
+        }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
+            pasa = false;
+        }else if(this.tablaProcesosSuspendidosInicial.getSelectedRow() != -1){
+            pasa = false;
+            botonDesuspenderProceso.setEnabled(true);
+        }
+        if(pasa){
             botonSuspenderProceso.setEnabled(false);
-            botonDesuspenderProceso.setEnabled(false);
             botonEliminarProceso.setEnabled(false);
             botonCambiarPrioridad.setEnabled(false);
         }
@@ -668,10 +718,10 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         botonDesuspenderProceso = new javax.swing.JButton();
         botonCambiarPrioridad = new javax.swing.JButton();
         spinnerPrioridad = new javax.swing.JSpinner();
-        jButton4 = new javax.swing.JButton();
-        jSpinner2 = new javax.swing.JSpinner();
+        botonCambiarCiclos = new javax.swing.JButton();
+        spinnerCilclosCPU = new javax.swing.JSpinner();
         botonEliminarProceso = new javax.swing.JButton();
-        jButton6 = new javax.swing.JButton();
+        botonInsertar = new javax.swing.JButton();
         botonPausar = new javax.swing.JButton();
         barraUsoDeCPU = new javax.swing.JProgressBar();
         jLabel7 = new javax.swing.JLabel();
@@ -706,9 +756,13 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }
         };
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(0, 204, 204));
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
 
         tablaEjecucion.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -1073,18 +1127,28 @@ public final class VistaPlanificador extends javax.swing.JFrame {
 
         spinnerPrioridad.setModel(new javax.swing.SpinnerNumberModel(1, 1, 99, 1));
 
-        jButton4.setText("Cambiar ciclos para corte por CPU");
-        jButton4.addActionListener(new java.awt.event.ActionListener() {
+        botonCambiarCiclos.setText("Cambiar ciclos para corte por CPU");
+        botonCambiarCiclos.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton4ActionPerformed(evt);
+                botonCambiarCiclosActionPerformed(evt);
             }
         });
 
-        jSpinner2.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
+        spinnerCilclosCPU.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
 
         botonEliminarProceso.setText("Eliminar");
+        botonEliminarProceso.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                botonEliminarProcesoActionPerformed(evt);
+            }
+        });
 
-        jButton6.setText("Insertar");
+        botonInsertar.setText("Insertar");
+        botonInsertar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                botonInsertarActionPerformed(evt);
+            }
+        });
 
         botonPausar.setText("PAUSAR");
         botonPausar.addActionListener(new java.awt.event.ActionListener() {
@@ -1253,9 +1317,9 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addGroup(layout.createSequentialGroup()
-                                                .addComponent(jButton4)
+                                                .addComponent(botonCambiarCiclos)
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                .addComponent(jSpinner2, javax.swing.GroupLayout.PREFERRED_SIZE, 113, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addComponent(spinnerCilclosCPU, javax.swing.GroupLayout.PREFERRED_SIZE, 113, javax.swing.GroupLayout.PREFERRED_SIZE))
                                             .addGroup(layout.createSequentialGroup()
                                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                                     .addGroup(layout.createSequentialGroup()
@@ -1264,7 +1328,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                                                             .addComponent(botonSuspenderProceso, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE))
                                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                                            .addComponent(jButton6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                            .addComponent(botonInsertar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                                             .addComponent(botonEliminarProceso, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)))
                                                     .addGroup(layout.createSequentialGroup()
                                                         .addComponent(botonCambiarPrioridad)
@@ -1485,8 +1549,8 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                         .addComponent(botonPausar, javax.swing.GroupLayout.PREFERRED_SIZE, 76, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButton4)
-                            .addComponent(jSpinner2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(botonCambiarCiclos)
+                            .addComponent(spinnerCilclosCPU, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -1502,7 +1566,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(botonDesuspenderProceso)
-                                    .addComponent(jButton6))
+                                    .addComponent(botonInsertar))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                     .addComponent(botonCambiarPrioridad)
@@ -1552,14 +1616,16 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             instancePlanificador.suspenderProceso(Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString()));
         }
         if(seBloqueo){
-            actualiazarDatosCriticos();
+            actualiazarDatosCriticos(true);
         }
         idDelProcesosAInteractuar.setText("");
     }//GEN-LAST:event_botonSuspenderProcesoActionPerformed
 
-    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+    private void botonCambiarCiclosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonCambiarCiclosActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jButton4ActionPerformed
+        instancePlanificador.modificarTiempoCPU(Integer.parseInt(spinnerCilclosCPU.getValue().toString()));
+        actualizarVentanasDatos();
+    }//GEN-LAST:event_botonCambiarCiclosActionPerformed
 
     private void botonPausarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonPausarActionPerformed
         // TODO add your handling code here:
@@ -1586,7 +1652,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
     }//GEN-LAST:event_colaSOAMouseClicked
 
     private void idDelProcesosAInteractuarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_idDelProcesosAInteractuarActionPerformed
-
+        
     }//GEN-LAST:event_idDelProcesosAInteractuarActionPerformed
 
     private void idDelProcesosAInteractuarKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_idDelProcesosAInteractuarKeyReleased
@@ -1676,58 +1742,104 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             instancePlanificador.reanudarProceso(Integer.parseInt(tablaProcesosSuspendidosInicial.getValueAt(tablaProcesosSuspendidosInicial.getSelectedRow(), 0).toString()));
         }
         if(seDesbloqueo){
-            actualiazarDatosCriticos();
+            actualiazarDatosCriticos(true);
         }
         idDelProcesosAInteractuar.setText("");
     }//GEN-LAST:event_botonDesuspenderProcesoActionPerformed
 
     private void botonCambiarPrioridadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonCambiarPrioridadActionPerformed
         // TODO add your handling code here:
-        boolean seCambio = true;
-        int id;
+        boolean seCambio;
+        Integer id = null;
         if(!idDelProcesosAInteractuar.getText().equals("")){
             seCambio = instancePlanificador.modificarPrioridad(Integer.parseInt(idDelProcesosAInteractuar.getText()), Integer.parseInt(spinnerPrioridad.getValue().toString()));
             if(!seCambio){
                 JOptionPane.showMessageDialog(null, "La ID ingresada no concuerda con ningun proceso habilitado");
+                return;
             }
+            actualiazarDatosCriticos(true);
+            return;
         }else if(colaSOA.getSelectedRow() != -1){
             id = Integer.parseInt(colaSOA.getValueAt(colaSOA.getSelectedRow(), 0).toString());
-            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
         }else if(colaSOB.getSelectedRow() != -1){
             id = Integer.parseInt(colaSOB.getValueAt(colaSOB.getSelectedRow(), 0).toString());
-            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
         }else if(colaNuevosA.getSelectedRow() != -1){
             id = Integer.parseInt(colaNuevosA.getValueAt(colaNuevosA.getSelectedRow(), 0).toString());
-            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
         }else if(colaNuevosB.getSelectedRow() != -1){
             id = Integer.parseInt(colaNuevosB.getValueAt(colaNuevosB.getSelectedRow(), 0).toString());
-            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
         }else if(colaCPUA.getSelectedRow() != -1){
             id = Integer.parseInt(colaCPUA.getValueAt(colaCPUB.getSelectedRow(), 0).toString());
-            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
         }else if(colaCPUB.getSelectedRow() != -1){
             id = Integer.parseInt(colaCPUB.getValueAt(colaCPUA.getSelectedRow(), 0).toString());
-            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
         }else if(colaESB.getSelectedRow() != -1){
             id = Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString());
-            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
         }else if(colaESA.getSelectedRow() != -1){
             id = Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString());
-            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
         }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
             id = Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString());
-            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }else{
+            id = Integer.parseInt(tablaProcesosSuspendidosInicial.getValueAt(tablaProcesosSuspendidosInicial.getSelectedRow(), 0).toString());
         }   
-        if(seCambio){
-            actualiazarDatosCriticos();
-        }
+        instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        actualiazarDatosCriticos(true);    
         idDelProcesosAInteractuar.setText("");
     }//GEN-LAST:event_botonCambiarPrioridadActionPerformed
+
+    private void botonEliminarProcesoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonEliminarProcesoActionPerformed
+        // TODO add your handling code here:
+        boolean seCambio = true;
+        Integer id = null;
+        if(!idDelProcesosAInteractuar.getText().equals("")){
+            seCambio = instancePlanificador.eliminarProceso(Integer.parseInt(idDelProcesosAInteractuar.getText()));
+            if(!seCambio){
+                JOptionPane.showMessageDialog(null, "La ID ingresada no concuerda con ningun proceso habilitado");
+                return;
+            }
+            actualiazarDatosCriticos(true);
+            return;
+        }else if(colaSOA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaSOA.getValueAt(colaSOA.getSelectedRow(), 0).toString());
+            instancePlanificador.eliminarProceso(id);
+        }else if(colaSOB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaSOB.getValueAt(colaSOB.getSelectedRow(), 0).toString());
+        }else if(colaNuevosA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaNuevosA.getValueAt(colaNuevosA.getSelectedRow(), 0).toString());
+        }else if(colaNuevosB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaNuevosB.getValueAt(colaNuevosB.getSelectedRow(), 0).toString());
+        }else if(colaCPUA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaCPUA.getValueAt(colaCPUB.getSelectedRow(), 0).toString());
+        }else if(colaCPUB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaCPUB.getValueAt(colaCPUA.getSelectedRow(), 0).toString());
+        }else if(colaESB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString());
+        }else if(colaESA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString());
+        }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
+            id = Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString());
+        }else{
+            id = Integer.parseInt(tablaProcesosSuspendidosInicial.getValueAt(tablaProcesosSuspendidosInicial.getSelectedRow(), 0).toString());
+        }   
+        instancePlanificador.eliminarProceso(id);
+        actualiazarDatosCriticos(true);    
+        idDelProcesosAInteractuar.setText("");
+    }//GEN-LAST:event_botonEliminarProcesoActionPerformed
+
+    private void botonInsertarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonInsertarActionPerformed
+        // TODO add your handling code here:
+        this.ventanaCreadora.setVisible(true);
+    }//GEN-LAST:event_botonInsertarActionPerformed
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        // TODO add your handling code here:
+        Ventana_Final v = new Ventana_Final();
+        v.setVisible(true);
+    }//GEN-LAST:event_formWindowClosing
 
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
+        
         
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -1757,9 +1869,11 @@ public final class VistaPlanificador extends javax.swing.JFrame {
     private javax.swing.JProgressBar barraSOYUSER;
     private javax.swing.JProgressBar barraSuspendidos;
     private javax.swing.JProgressBar barraUsoDeCPU;
+    private javax.swing.JButton botonCambiarCiclos;
     private javax.swing.JButton botonCambiarPrioridad;
     private javax.swing.JButton botonDesuspenderProceso;
     private javax.swing.JButton botonEliminarProceso;
+    private javax.swing.JButton botonInsertar;
     private javax.swing.JButton botonPausar;
     private javax.swing.JButton botonSuspenderProceso;
     private javax.swing.JTextField cantidadProcesos;
@@ -1781,8 +1895,6 @@ public final class VistaPlanificador extends javax.swing.JFrame {
     private javax.swing.JLabel etiquetaProcentajeProcesosSuspendidos;
     private javax.swing.JLabel etiquetaProcentajeUsoCPUs;
     private javax.swing.JTextField idDelProcesosAInteractuar;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton6;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -1817,7 +1929,6 @@ public final class VistaPlanificador extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
-    private javax.swing.JSpinner jSpinner2;
     private javax.swing.JTextField poximoProcesoCiclosParaES;
     private javax.swing.JTextField poximoProcesoDuracion;
     private javax.swing.JTextField poximoProcesoDuracionES;
@@ -1828,9 +1939,37 @@ public final class VistaPlanificador extends javax.swing.JFrame {
     private javax.swing.JTextField poximoProcesoTiempoRestante;
     private javax.swing.JTextField poximoProcesoTipo;
     private javax.swing.JTextField quantunn;
+    private javax.swing.JSpinner spinnerCilclosCPU;
     private javax.swing.JSpinner spinnerPrioridad;
     private javax.swing.JTable tablaEjecucion;
     private javax.swing.JTable tablaProcesosBloqueadosInicial;
     private javax.swing.JTable tablaProcesosSuspendidosInicial;
     // End of variables declaration//GEN-END:variables
+}
+
+class RenderEjecucion extends DefaultTableCellRenderer{
+
+    
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        JLabel result = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column); 
+        String nuevo = (String) value;
+        if(!value.equals("LIBRE")){
+            nuevo = nuevo.replaceAll("%", "");
+            int porcent = Integer.parseInt(nuevo);
+            if(porcent < 33){
+                result.setBackground(Color.red);
+            }else if(porcent < 66){
+                result.setBackground(Color.yellow);
+            }else{
+                result.setBackground(Color.green);
+            }
+        }else{
+            result.setBackground(Color.green);
+        }
+        
+        return result;
+    }
+                
+    
 }

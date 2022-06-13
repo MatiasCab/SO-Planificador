@@ -16,6 +16,8 @@ public class Planificador { //Esta clase tiene que ser singleton
     
     private static final Planificador instance = null;
     
+    private boolean estaOcupado = false;
+    
     private ArrayList<CPU> CPUs;
     private final ListaProcesos[] colaProcesos1 = new ListaProcesos[4];
     private final ListaProcesos[] colaProcesos2 = new ListaProcesos[4];
@@ -107,6 +109,12 @@ public class Planificador { //Esta clase tiene que ser singleton
             proceso.cambiarPrioridad(prioridad);
             this.bloqueadosPorES.insertar(proceso.getPrioridad(), proceso);
             return true;
+        }        
+        for(Proceso p : this.suspendidos.keySet()){
+            if(p.getID().compareTo(idProceso) == 0){
+                p.cambiarPrioridad(prioridad);
+                return true;
+            }
         }
         return false;
         
@@ -160,6 +168,48 @@ public class Planificador { //Esta clase tiene que ser singleton
         return false;
     }
     
+    public boolean eliminarProceso(int idProceso){
+        Proceso proceso = this.colaDeEjecucion[0].eliminar(idProceso);
+        if(proceso != null){
+            return true;
+        }
+        proceso = this.colaDeEjecucion[1].eliminar(idProceso);
+        if(proceso != null){
+            return true;
+        }
+        proceso = this.colaDeEjecucion[2].eliminar(idProceso);
+        if(proceso != null){
+            return true;
+        }
+        proceso = this.colaDeEjecucion[3].eliminar(idProceso);
+        if(proceso != null){
+            return true;
+        }
+        proceso = this.colaDeExpirados[0].eliminar(idProceso);
+        if(proceso != null){
+            return true;
+        }
+        proceso = this.colaDeExpirados[2].eliminar(idProceso);
+        if(proceso != null){
+            return true;
+        }
+        proceso = this.colaDeExpirados[3].eliminar(idProceso);
+        if(proceso != null){
+            return true;
+        }
+        proceso = this.bloqueadosPorES.eliminar(idProceso);
+        if(proceso != null){
+            return true;
+        }        
+        for(Proceso p : this.suspendidos.keySet()){
+            if(p.getID().compareTo(idProceso) == 0){
+                this.suspendidos.remove(p);
+                return true;
+            }
+        }
+        return false;
+    }
+    
     public boolean reanudarProceso(int idProceso){
         for(Proceso p : this.suspendidos.keySet()){
             if (p.getID().equals(idProceso)){
@@ -187,7 +237,11 @@ public class Planificador { //Esta clase tiene que ser singleton
         return false;
     }
     
-    public void ingresarProcesos(LinkedList<Proceso> procesosNuevos){
+    public synchronized void ingresarProcesos(LinkedList<Proceso> procesosNuevos) throws InterruptedException{
+        while (estaOcupado){
+            wait();
+        }
+        estaOcupado = true;
         for (Proceso p : procesosNuevos){
             if(p.isOfSO()){
                 colaDeEjecucion[0].insertar(p.getPrioridad(), p);
@@ -195,6 +249,9 @@ public class Planificador { //Esta clase tiene que ser singleton
                 colaDeEjecucion[1].insertar(p.getPrioridad(), p);
             }
         }
+        estaOcupado = false;
+        notify();
+        
     }
     
     private void crearCPUs(int cantidad){
@@ -218,7 +275,11 @@ public class Planificador { //Esta clase tiene que ser singleton
         return contador;
     }
     
-    public void ejecutarCiclo(){
+    public synchronized void ejecutarCiclo() throws InterruptedException{
+        while (estaOcupado){
+            wait();
+        }
+        estaOcupado = true;
         this.cambioContextoColas = false;
         for (CPU c : this.CPUs){
             if(!c.ejecutarCiclo(this.tiempoDeEjecucion, this.colaDeExpirados, this.bloqueadosPorES)){
@@ -227,6 +288,8 @@ public class Planificador { //Esta clase tiene que ser singleton
         }
         actualizarBloqueados();
         this.cantidadProcesos = obtenerCantidadProcesos();
+        estaOcupado = false;
+        notify();
     }
     
     private int obtenerCantidadProcesos(){

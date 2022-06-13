@@ -7,6 +7,8 @@ package com.mycompany.sistemas_operativos_obligatorio;
 import javax.swing.table.DefaultTableModel;
 import Procesos.*;
 import java.util.LinkedList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -26,6 +28,9 @@ public class CreadorProcesos extends javax.swing.JFrame {
     public CreadorProcesos(int cantCPUs, float tiempoSegs, int cantCiclosEjecucionCPUs) {
         
         initComponents();
+        
+        setLocationRelativeTo(null);
+        this.
         
         duracionESProceso.setEnabled(false);
         
@@ -208,6 +213,7 @@ public class CreadorProcesos extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
+        tablaProcesosIncial.getTableHeader().setReorderingAllowed(false);
         tablaProcesosIncial.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 tablaProcesosIncialMouseClicked(evt);
@@ -434,7 +440,13 @@ public class CreadorProcesos extends javax.swing.JFrame {
         botonEliminarProceso.setEnabled(false);
         botonCargarProceso.setEnabled(false);
         
-        this.ventanaPrincipal.agregarProcesos(listaProcesos);
+        try {
+            ventanaPrincipal.agregarProcesos(listaProcesos);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(CreadorProcesos.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        dispose();
     }//GEN-LAST:event_botonCargarProcesoActionPerformed
 
     private void botonGenerarProcesosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonGenerarProcesosActionPerformed
@@ -474,6 +486,7 @@ public class CreadorProcesos extends javax.swing.JFrame {
         
             tablaProcesos.addRow(datos);
         }
+        botonCargarProceso.setEnabled(true);
     }//GEN-LAST:event_botonGenerarProcesosActionPerformed
 
     public static void main(String args[]) {

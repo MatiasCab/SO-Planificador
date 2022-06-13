@@ -136,7 +136,7 @@ public class Creador_CPUs extends javax.swing.JFrame {
         
         CreadorProcesos ventanaProcesos = new CreadorProcesos(cantCPUs, duracionSegs, ciclosDeUsoProcesoCPUs);
         ventanaProcesos.setVisible(true);
-        this.dispose();
+        dispose();
     }//GEN-LAST:event_botonSiguienteActionPerformed
 
     private void cantidadCPUsStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_cantidadCPUsStateChanged
