@@ -12,11 +12,13 @@ import java.awt.Color;
 import java.util.LinkedList;
 import javax.swing.table.DefaultTableModel;
 import java.util.ArrayList;
+import java.util.Set;
+import javax.swing.JOptionPane;
 /**
  *
  * @author matia
  */
-public class VistaPlanificador extends javax.swing.JFrame {
+public final class VistaPlanificador extends javax.swing.JFrame {
 
     private int instanceas = 0;
     
@@ -25,7 +27,7 @@ public class VistaPlanificador extends javax.swing.JFrame {
     CreadorProcesos ventanaCreadora;
     Timer interrupcion;
     
-    int tiempoSegs;
+    float tiempoSegs;
     
     int cantidadCiclos = 0;
     
@@ -50,12 +52,8 @@ public class VistaPlanificador extends javax.swing.JFrame {
             instancePlanificador.ejecutarCiclo();
             ventanaPlani.cantidadCiclos++;
             ventanaPlani.actualizarTablaEjecucion();
-            ventanaPlani.actualizarTablasColas();
-            ventanaPlani.obtenerProximoProceso();
-            ventanaPlani.actualizarTablaBloqueados();
-            ventanaPlani.actualizarTablaSuspendidos();
             ventanaPlani.actualizarVentanasDatos();
-            ventanaPlani.actualizarBarrasDatos();
+            ventanaPlani.actualiazarDatosCriticos();
             System.out.println("POOM");
         }
     };
@@ -67,7 +65,7 @@ public class VistaPlanificador extends javax.swing.JFrame {
      * @param cantCiclosEjecucionCPUs
      * @param ventanaCreadora
      */
-    public VistaPlanificador(int cantCPUs, int tiempoSegs, int cantCiclosEjecucionCPUs, CreadorProcesos ventanaCreadora) {
+    public VistaPlanificador(int cantCPUs, float tiempoSegs, int cantCiclosEjecucionCPUs, CreadorProcesos ventanaCreadora) {
         initComponents();
         
         instanceas++;
@@ -80,6 +78,7 @@ public class VistaPlanificador extends javax.swing.JFrame {
         
         this.tiempoSegs = tiempoSegs;
         
+        this.getContentPane().setBackground(new Color(51,255,255));
         ArrayList<DefaultTableModel> listaTablasModels = new ArrayList<>();
         
         tablaProcesosSOA = new DefaultTableModel();
@@ -90,7 +89,7 @@ public class VistaPlanificador extends javax.swing.JFrame {
         tablaProcesosCPUB = new DefaultTableModel();
         tablaProcesosESA = new DefaultTableModel();
         tablaProcesosESB = new DefaultTableModel();
-        
+    
         listaTablasModels.add(tablaProcesosSOA);
         listaTablasModels.add(tablaProcesosSOB);
         listaTablasModels.add(tablaProcesosNuevosA);
@@ -101,12 +100,12 @@ public class VistaPlanificador extends javax.swing.JFrame {
         listaTablasModels.add(tablaProcesosESB);
         
         for (DefaultTableModel t : listaTablasModels){
+            t.addColumn("ID");
             t.addColumn("Nombre");
             t.addColumn("Tipo");
             t.addColumn("Prioridad");
-            t.addColumn("Duracion");
+            t.addColumn("% Completado");
             t.addColumn("Ciclos para E/S");
-            t.addColumn("Duracion E/S");
         }
         
         colaSOA.setModel(listaTablasModels.get(0));
@@ -132,8 +131,10 @@ public class VistaPlanificador extends javax.swing.JFrame {
 
         tablaEjecucion.setModel(tablaProcesosEjecucion);
         
+        
         tablaProcesosBloqueados = new DefaultTableModel();
         
+        tablaProcesosBloqueados.addColumn("ID");
         tablaProcesosBloqueados.addColumn("Nombre");
         tablaProcesosBloqueados.addColumn("Tipo");
         tablaProcesosBloqueados.addColumn("Prioridad");
@@ -158,19 +159,29 @@ public class VistaPlanificador extends javax.swing.JFrame {
         colaCPU2.setBackground(Color.green);
         
         tablaEjecucion.setEnabled(false);
+        
+        
+        
+        desabilitarBotones();
+    }
+    
+    private void actualiazarDatosCriticos(){
+        ventanaPlani.actualizarTablasColas();
+        ventanaPlani.obtenerProximoProceso();
+        ventanaPlani.actualizarTablaBloqueados();
+        ventanaPlani.actualizarTablaSuspendidos();
+        ventanaPlani.actualizarBarrasDatos();
+        ventanaPlani.desabilitarBotones();
     }
     
     public void agregarProcesos(LinkedList<Proceso> listaProcesos){
         this.instancePlanificador.ingresarProcesos(listaProcesos);
-        
         if(!this.isVisible()){
             this.setVisible(true);
             boolean primeraIteracion = false;
             if (interrupcion == null){
                 primeraIteracion = true;
-                interrupcion = new Timer(tiempoSegs*1000, ejecutarCiclo);
-            }
-            if(!interrupcion.isRunning()){
+                interrupcion = new Timer((int) (tiempoSegs*1000), ejecutarCiclo);
                 interrupcion.start();
             }
             if(primeraIteracion){
@@ -179,6 +190,12 @@ public class VistaPlanificador extends javax.swing.JFrame {
                 ventanaPlani.actualizarTablasColas();
                 inicializarBarrasColas("B");
             } 
+        }else{
+            reajustarBarrasColas(listaProcesos.size());
+            actualizarTablasColas();
+            obtenerProximoProceso();
+            actualizarVentanasDatos();
+            actualizarBarrasDatos();
         }
     }
     
@@ -228,14 +245,15 @@ public class VistaPlanificador extends javax.swing.JFrame {
         for(int i = filas - 1; i >= 0; i--){
             tablaProcesosBloqueados.removeRow(i);
         }
-        Object[] datos = new Object[5];
+        Object[] datos = new Object[6];
         ArrayList<Proceso> listaBloqueados = instancePlanificador.getBloqueadosPorES();
         for(Proceso p : listaBloqueados){
-            datos[0] = p.getNombre();
-            datos[1] = (p.isOfSO() ? "SO" : "USER");
-            datos[2] = p.getPrioridad();
-            datos[3] = p.getDuracionES();
-            datos[4] = p.getValoresEjecucionProceso()[2];
+            datos[0] = p.getID();
+            datos[1] = p.getNombre();
+            datos[2] = (p.isOfSO() ? "SO" : "USER");
+            datos[3] = p.getPrioridad();
+            datos[4] = p.getDuracionES();
+            datos[5] = p.getValoresEjecucionProceso()[2];
             tablaProcesosBloqueados.addRow(datos);
         }
     }
@@ -246,9 +264,8 @@ public class VistaPlanificador extends javax.swing.JFrame {
             tablaProcesosSuspendidos.removeRow(i);
         }
         Object[] datos = new Object[5];
-        ArrayList<Proceso> listaSuspendidos = instancePlanificador.getSuspendidos();
-        for(int i = listaSuspendidos.size() - 1; i >= 0; i--){
-            Proceso p = listaSuspendidos.get(i);
+        Set<Proceso> listaSuspendidos = instancePlanificador.getSuspendidos();
+        for(Proceso p : listaSuspendidos){
             datos[0] = p.getID();
             datos[1] = p.getNombre();
             datos[2] = (p.isOfSO() ? "SO" : "USER");
@@ -273,6 +290,8 @@ public class VistaPlanificador extends javax.swing.JFrame {
             actualizarTablaColaProcesos(tablaProcesosSOA, colaProceso);
             barraProgresoSOA.setMaximum(colaProceso.size());
             barraProgresoSOA.setValue(colaProceso.size());
+            
+            actualizarTablaColaProcesos(tablaProcesosNuevosA, null);
                     
             colaProceso = instancePlanificador.getColaDeExpiradosLimitadosCPU();
             actualizarTablaColaProcesos(tablaProcesosCPUA, colaProceso);
@@ -306,6 +325,8 @@ public class VistaPlanificador extends javax.swing.JFrame {
             actualizarTablaColaProcesos(tablaProcesosSOB, colaProceso);
             barraProgresoSOB.setMaximum(colaProceso.size());
             barraProgresoSOB.setValue(colaProceso.size());
+            
+            actualizarTablaColaProcesos(tablaProcesosNuevosB, null);
                     
             colaProceso = instancePlanificador.getColaDeExpiradosLimitadosCPU();
             actualizarTablaColaProcesos(tablaProcesosCPUB, colaProceso);
@@ -335,6 +356,26 @@ public class VistaPlanificador extends javax.swing.JFrame {
         }
     }
     
+    public void actualizarTablaColaProcesos(DefaultTableModel tabla, ArrayList<Proceso> listaProcesos){
+        int filas = tabla.getRowCount();
+        for(int i = filas - 1; i >= 0; i--){
+            tabla.removeRow(i);
+        }
+        if(listaProcesos != null){
+            Object[] datos = new Object[6];
+            for (int i = listaProcesos.size() - 1; i >= 0; i--){
+                Proceso p = listaProcesos.get(i);
+                datos[0] = p.getID();
+                datos[1] = p.getNombre();
+                datos[2] = (p.isOfSO() ? "SO" : "USER");
+                datos[3] = p.getPrioridad();
+                datos[4] = (-(((p.getValoresEjecucionProceso()[0] * 100) / p.getDuracion())-100) + "%");
+                datos[5] = p.getTiemporCorteES();
+                tabla.addRow(datos);
+            }  
+        }
+    }
+    
     public void inicializarBarrasColas(String tipo){
         
         javax.swing.JProgressBar[] barras = new javax.swing.JProgressBar[8];
@@ -354,6 +395,7 @@ public class VistaPlanificador extends javax.swing.JFrame {
             com = 0;
         }
         int cantidadEnCola = 0;
+        boolean primeroATomar = true;
         for (int i = com; i < barras.length; i += 2){
             switch (i){
                 case 0 -> cantidadEnCola = instancePlanificador.getColaDejecucionSO().size();
@@ -365,26 +407,39 @@ public class VistaPlanificador extends javax.swing.JFrame {
                 case 6 -> cantidadEnCola = instancePlanificador.getColaDejecucionLimitadosES().size();
                 case 7 -> cantidadEnCola = instancePlanificador.getColaDejecucionLimitadosES().size();   
             }
-            barras[i].setMaximum((i == 0 | i == 1 ? cantidadEnCola + 1 : cantidadEnCola));
-            barras[i].setValue((i == 0 | i == 1 ? cantidadEnCola + 1 : cantidadEnCola));
+            if((i == 1 | i == 0) & cantidadEnCola != 0){
+                primeroATomar = false;
+                barras[i].setMaximum(cantidadEnCola + 1);
+                barras[i].setValue(barras[i].getMaximum());
+            }else if(primeroATomar & cantidadEnCola != 0){
+                primeroATomar = false;
+                barras[i].setMaximum(cantidadEnCola + 1);
+                barras[i].setValue(barras[i].getMaximum());
+            }else{
+                barras[i].setMaximum(cantidadEnCola);
+                barras[i].setValue(barras[i].getMaximum()); 
+            }
         }
     }
     
-    public void actualizarTablaColaProcesos(DefaultTableModel tabla, ArrayList<Proceso> listaProcesos){
-        int filas = tabla.getRowCount();
-        for(int i = filas - 1; i >= 0; i--){
-            tabla.removeRow(i);
-        }
-        Object[] datos = new Object[6];
-        for (int i = listaProcesos.size() - 1; i >= 0; i--){
-                Proceso p = listaProcesos.get(i);
-                datos[0] = p.getNombre();
-                datos[1] = (p.isOfSO() ? "SO" : "USER");
-                datos[2] = p.getPrioridad();
-                datos[3] = p.getDuracion();
-                datos[4] = p.getTiemporCorteES();
-                datos[5] = p.getDuracionES();
-                tabla.addRow(datos);
+    public void reajustarBarrasColas(int cantidadNuevos){
+        int procesosSONuevos;
+        if(colaCPU1.getText().equals("COLA EXPIRADOS")){
+            procesosSONuevos = instancePlanificador.getCantProcesosSO() - barraProgresoSOB.getMaximum();
+            barraProgresoSOB.setMaximum(barraProgresoSOB.getMaximum() + procesosSONuevos);
+            barraProgresoSOB.setValue(tablaProcesosSOB.getRowCount() + procesosSONuevos);
+            
+            procesosSONuevos = cantidadNuevos - procesosSONuevos;
+            barraProgresoNuevosB.setMaximum(barraProgresoNuevosB.getMaximum() + procesosSONuevos);
+            barraProgresoNuevosB.setValue(tablaProcesosNuevosB.getRowCount() + procesosSONuevos);
+        }else{
+            procesosSONuevos = instancePlanificador.getCantProcesosSO() - barraProgresoSOA.getMaximum();
+            barraProgresoSOA.setMaximum(barraProgresoSOA.getMaximum() + procesosSONuevos);
+            barraProgresoSOA.setValue(tablaProcesosSOA.getRowCount() + procesosSONuevos);
+            
+            procesosSONuevos = cantidadNuevos - procesosSONuevos;
+            barraProgresoNuevosA.setMaximum(barraProgresoNuevosA.getMaximum() + procesosSONuevos);
+            barraProgresoNuevosA.setValue(tablaProcesosSOB.getRowCount() + procesosSONuevos);
         }
     }
     
@@ -394,30 +449,44 @@ public class VistaPlanificador extends javax.swing.JFrame {
             colaCPU2.setBackground(Color.red);
             colaCPU1.setText("COLA DE EJECUCION");
             colaCPU1.setBackground(Color.green);
-            colaNuevosB.setEnabled(false);
-            colaNuevosA.setEnabled(true);
         }else{
             colaCPU1.setText("COLA EXPIRADOS");
             colaCPU1.setBackground(Color.red);
             colaCPU2.setText("COLA DE EJECUCION");
             colaCPU2.setBackground(Color.green);
-            colaNuevosA.setEnabled(false);
-            colaNuevosB.setEnabled(true);
         }
     }
     
     public void actualizarBarrasDatos(){
-        barraUsoDeCPU.setMaximum(instancePlanificador.cantidadCPUs());
-        barraUsoDeCPU.setValue(instancePlanificador.cantCPUsEnUso());
         
-        barraSuspendidos.setMaximum(instancePlanificador.getCantidadProcesos());
-        barraSuspendidos.setValue(instancePlanificador.getProcesosSuspendidos());
+        int cantidad1 = instancePlanificador.cantidadCPUs();
+        int cantidad2 = instancePlanificador.cantCPUsEnUso();
+        barraUsoDeCPU.setMaximum(cantidad1);
+        barraUsoDeCPU.setValue(cantidad2);
+        etiquetaProcentajeUsoCPUs.setText(String.valueOf(cantidad2 * 100 / cantidad1) + "%");
         
+        cantidad1 = instancePlanificador.getCantidadProcesos();
+        cantidad2 = instancePlanificador.getProcesosSuspendidos();
+        barraSuspendidos.setMaximum(cantidad1);
+        barraSuspendidos.setValue(cantidad2);
+        cantidad1 =(cantidad1 == 0 ? 1 :cantidad1);
+        etiquetaProcentajeProcesosSuspendidos.setText(String.valueOf(cantidad2 * 100 / cantidad1) + "%");
+        
+        cantidad1 = instancePlanificador.getCantidadProcesos();
+        cantidad2 = instancePlanificador.getCantProcesosSO();
         barraSOYUSER.setMaximum(instancePlanificador.getCantidadProcesos());
-        barraSOYUSER.setValue(instancePlanificador.getProcesosSO());
+        barraSOYUSER.setValue(instancePlanificador.getCantProcesosSO());
+        cantidad1 =(cantidad1 == 0 ? 1 :cantidad1);
+        etiquetaPorcentajeProcesosSO.setText("("+String.valueOf(cantidad2 * 100 / cantidad1) + "%"+")");
+        etiquetaPorcentajeProcesosUSER.setText("("+String.valueOf(100 - (cantidad2 * 100 / cantidad1)) + "%"+")");
         
-        barraBloqueadosYEjecucion.setMaximum(instancePlanificador.getCantProceosBloqueados() + instancePlanificador.getProcesosListos());
-        barraBloqueadosYEjecucion.setValue(instancePlanificador.getCantProceosBloqueados());
+        cantidad1 = instancePlanificador.getCantProceosBloqueados() + instancePlanificador.getProcesosListos();
+        cantidad2 = instancePlanificador.getProcesosListos();
+        barraBloqueadosYEjecucion.setMaximum(cantidad1);
+        barraBloqueadosYEjecucion.setValue(cantidad2);
+        cantidad1 =(cantidad1 == 0 ? 1 :cantidad1);
+        etiquetaPorcentajeProcesosListos.setText("("+String.valueOf(cantidad2 * 100 / cantidad1) + "%"+")");
+        etiquetaPorcentajeProcesosBloqueados.setText("("+String.valueOf(100 - (cantidad2 * 100 / cantidad1)) + "%"+")");
     }
     
     public void obtenerProximoProceso(){
@@ -433,18 +502,56 @@ public class VistaPlanificador extends javax.swing.JFrame {
             poximoProcesoParaProximaES.setText(String.valueOf((proceso.getTiemporCorteES() == 0 ? "NO TIENE" : proceso.getValoresEjecucionProceso()[1])));
             poximoProcesoDuracionES.setText(String.valueOf((proceso.getTiemporCorteES() == 0 ? "NO TIENE" : proceso.getDuracionES())));
         }else{
-            poximoProcesoID.setText("");
-            poximoProcesoNombre.setText("");
-            poximoProcesoTipo.setText("");
-            poximoProcesoPrioridad.setText("");
-            poximoProcesoDuracion.setText("");
-            poximoProcesoTiempoRestante.setText("");
-            poximoProcesoCiclosParaES.setText("");
-            poximoProcesoParaProximaES.setText("");
-            poximoProcesoDuracionES.setText("");
+            poximoProcesoID.setText("NO HAY");
+            poximoProcesoNombre.setText("NO HAY");
+            poximoProcesoTipo.setText("NO HAY");
+            poximoProcesoPrioridad.setText("NO HAY");
+            poximoProcesoDuracion.setText("NO HAY");
+            poximoProcesoTiempoRestante.setText("NO HAY");
+            poximoProcesoCiclosParaES.setText("NO HAY");
+            poximoProcesoParaProximaES.setText("NO HAY");
+            poximoProcesoDuracionES.setText("NO HAY");
         }
     }
     
+    public void limpiarSeleccionTablas(javax.swing.JTable tablaHabilitada){
+        if(!colaSOA.equals(tablaHabilitada)){
+            colaSOA.clearSelection();
+        }if(!colaSOB.equals(tablaHabilitada)){
+            colaSOB.clearSelection();
+        }if(!colaNuevosA.equals(tablaHabilitada)){
+            colaNuevosA.clearSelection();
+        }if(!colaSOB.equals(tablaHabilitada)){
+            colaSOB.clearSelection();
+        }if(!colaCPUB.equals(tablaHabilitada)){
+            colaCPUB.clearSelection();
+        }if(!colaCPUA.equals(tablaHabilitada)){
+            colaCPUA.clearSelection();
+        }if(!colaESB.equals(tablaHabilitada)){
+            colaESB.clearSelection();
+        }if(!colaESA.equals(tablaHabilitada)){
+            colaESA.clearSelection();
+        }if(!tablaProcesosBloqueadosInicial.equals(tablaHabilitada)){
+            tablaProcesosBloqueadosInicial.clearSelection();
+        }if(!tablaProcesosSuspendidosInicial.equals(tablaHabilitada)){
+            tablaProcesosSuspendidosInicial.clearSelection();
+        }
+    }
+    
+    public void desabilitarBotones(){
+        if(idDelProcesosAInteractuar.getText().equals("")){
+            botonSuspenderProceso.setEnabled(false);
+            botonDesuspenderProceso.setEnabled(false);
+            botonEliminarProceso.setEnabled(false);
+            botonCambiarPrioridad.setEnabled(false);
+        }
+    }
+    
+    public void habilitarBotones(){
+        botonSuspenderProceso.setEnabled(true);
+        botonEliminarProceso.setEnabled(true);
+        botonCambiarPrioridad.setEnabled(true);
+    }
     
 
     /**
@@ -457,7 +564,12 @@ public class VistaPlanificador extends javax.swing.JFrame {
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        tablaEjecucion = new javax.swing.JTable();
+        tablaEjecucion = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
         jLabel1 = new javax.swing.JLabel();
         poximoProcesoNombre = new javax.swing.JTextField();
         jLabel8 = new javax.swing.JLabel();
@@ -484,38 +596,81 @@ public class VistaPlanificador extends javax.swing.JFrame {
         barraProgresoSOA = new javax.swing.JProgressBar();
         colaCPU1 = new javax.swing.JTextField();
         jScrollPane2 = new javax.swing.JScrollPane();
-        colaESA = new javax.swing.JTable();
+        colaESA = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
         jScrollPane3 = new javax.swing.JScrollPane();
-        colaSOA = new javax.swing.JTable();
+        colaSOA = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
         jScrollPane4 = new javax.swing.JScrollPane();
-        colaNuevosA = new javax.swing.JTable();
+        colaNuevosA = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
         jScrollPane5 = new javax.swing.JScrollPane();
-        colaCPUA = new javax.swing.JTable();
+        colaCPUA = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
         jScrollPane11 = new javax.swing.JScrollPane();
-        tablaProcesosBloqueadosInicial = new javax.swing.JTable();
+        tablaProcesosBloqueadosInicial = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
         jScrollPane12 = new javax.swing.JScrollPane();
-        tablaProcesosSuspendidosInicial = new javax.swing.JTable();
+        tablaProcesosSuspendidosInicial = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
         colaCPU2 = new javax.swing.JTextField();
         barraProgresoNuevosB = new javax.swing.JProgressBar();
         barraProgresoCPUB = new javax.swing.JProgressBar();
         barraProgresoESB = new javax.swing.JProgressBar();
         jScrollPane10 = new javax.swing.JScrollPane();
-        colaESB = new javax.swing.JTable();
+        colaESB = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
         jScrollPane13 = new javax.swing.JScrollPane();
-        colaCPUB = new javax.swing.JTable();
+        colaCPUB = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
         jScrollPane14 = new javax.swing.JScrollPane();
-        colaNuevosB = new javax.swing.JTable();
-        jScrollPane15 = new javax.swing.JScrollPane();
-        colaSOB = new javax.swing.JTable();
-        jButton1 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
-        jSpinner1 = new javax.swing.JSpinner();
+        colaSOB = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
+        botonSuspenderProceso = new javax.swing.JButton();
+        botonDesuspenderProceso = new javax.swing.JButton();
+        botonCambiarPrioridad = new javax.swing.JButton();
+        spinnerPrioridad = new javax.swing.JSpinner();
         jButton4 = new javax.swing.JButton();
         jSpinner2 = new javax.swing.JSpinner();
-        jButton5 = new javax.swing.JButton();
+        botonEliminarProceso = new javax.swing.JButton();
         jButton6 = new javax.swing.JButton();
         botonPausar = new javax.swing.JButton();
         barraUsoDeCPU = new javax.swing.JProgressBar();
@@ -525,7 +680,6 @@ public class VistaPlanificador extends javax.swing.JFrame {
         jLabel16 = new javax.swing.JLabel();
         jLabel17 = new javax.swing.JLabel();
         barraSOYUSER = new javax.swing.JProgressBar();
-        jLabel18 = new javax.swing.JLabel();
         jLabel19 = new javax.swing.JLabel();
         barraSuspendidos = new javax.swing.JProgressBar();
         ciclosTranscuridos = new javax.swing.JTextField();
@@ -535,9 +689,25 @@ public class VistaPlanificador extends javax.swing.JFrame {
         cantidadProcesos = new javax.swing.JTextField();
         jLabel22 = new javax.swing.JLabel();
         barraProgresoSOB = new javax.swing.JProgressBar();
+        jLabel23 = new javax.swing.JLabel();
+        etiquetaProcentajeUsoCPUs = new javax.swing.JLabel();
+        jLabel24 = new javax.swing.JLabel();
+        etiquetaProcentajeProcesosSuspendidos = new javax.swing.JLabel();
+        etiquetaPorcentajeProcesosUSER = new javax.swing.JLabel();
+        etiquetaPorcentajeProcesosSO = new javax.swing.JLabel();
+        etiquetaPorcentajeProcesosListos = new javax.swing.JLabel();
+        etiquetaPorcentajeProcesosBloqueados = new javax.swing.JLabel();
+        idDelProcesosAInteractuar = new javax.swing.JTextField();
+        jScrollPane16 = new javax.swing.JScrollPane();
+        colaNuevosB = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setBackground(new java.awt.Color(102, 102, 102));
+        setBackground(new java.awt.Color(0, 204, 204));
         setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
 
         tablaEjecucion.setModel(new javax.swing.table.DefaultTableModel(
@@ -599,12 +769,20 @@ public class VistaPlanificador extends javax.swing.JFrame {
         });
 
         barraProgresoNuevosA.setBackground(new java.awt.Color(0, 0, 102));
+        barraProgresoNuevosA.setString("NUEVOS");
+        barraProgresoNuevosA.setStringPainted(true);
 
         barraProgresoCPUA.setBackground(new java.awt.Color(255, 0, 0));
+        barraProgresoCPUA.setString("LIMITADOS POR CPU");
+        barraProgresoCPUA.setStringPainted(true);
 
         barraProgresoESA.setBackground(new java.awt.Color(0, 153, 153));
+        barraProgresoESA.setString("LIMITADOS POR E/S");
+        barraProgresoESA.setStringPainted(true);
 
         barraProgresoSOA.setBackground(Color.BLACK);
+        barraProgresoSOA.setString("SO");
+        barraProgresoSOA.setStringPainted(true);
 
         colaCPU1.setEditable(false);
         colaCPU1.addActionListener(new java.awt.event.ActionListener() {
@@ -623,7 +801,22 @@ public class VistaPlanificador extends javax.swing.JFrame {
             new String [] {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
-        ));
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        colaESA.setFocusable(false);
+        colaESA.getTableHeader().setReorderingAllowed(false);
+        colaESA.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaESAMouseClicked(evt);
+            }
+        });
         jScrollPane2.setViewportView(colaESA);
 
         colaSOA.setModel(new javax.swing.table.DefaultTableModel(
@@ -636,7 +829,22 @@ public class VistaPlanificador extends javax.swing.JFrame {
             new String [] {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
-        ));
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        colaSOA.setFocusable(false);
+        colaSOA.getTableHeader().setReorderingAllowed(false);
+        colaSOA.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaSOAMouseClicked(evt);
+            }
+        });
         jScrollPane3.setViewportView(colaSOA);
 
         colaNuevosA.setModel(new javax.swing.table.DefaultTableModel(
@@ -649,7 +857,22 @@ public class VistaPlanificador extends javax.swing.JFrame {
             new String [] {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
-        ));
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        colaNuevosA.setFocusable(false);
+        colaNuevosA.getTableHeader().setReorderingAllowed(false);
+        colaNuevosA.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaNuevosAMouseClicked(evt);
+            }
+        });
         jScrollPane4.setViewportView(colaNuevosA);
 
         colaCPUA.setModel(new javax.swing.table.DefaultTableModel(
@@ -662,7 +885,22 @@ public class VistaPlanificador extends javax.swing.JFrame {
             new String [] {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
-        ));
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        colaCPUA.setFocusable(false);
+        colaCPUA.getTableHeader().setReorderingAllowed(false);
+        colaCPUA.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaCPUAMouseClicked(evt);
+            }
+        });
         jScrollPane5.setViewportView(colaCPUA);
 
         jLabel5.setText("Procesos bloqueados:");
@@ -680,6 +918,13 @@ public class VistaPlanificador extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
+        tablaProcesosBloqueadosInicial.setFocusable(false);
+        tablaProcesosBloqueadosInicial.getTableHeader().setReorderingAllowed(false);
+        tablaProcesosBloqueadosInicial.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tablaProcesosBloqueadosInicialMouseClicked(evt);
+            }
+        });
         jScrollPane11.setViewportView(tablaProcesosBloqueadosInicial);
 
         tablaProcesosSuspendidosInicial.setModel(new javax.swing.table.DefaultTableModel(
@@ -693,6 +938,13 @@ public class VistaPlanificador extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
+        tablaProcesosSuspendidosInicial.setFocusable(false);
+        tablaProcesosSuspendidosInicial.getTableHeader().setReorderingAllowed(false);
+        tablaProcesosSuspendidosInicial.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tablaProcesosSuspendidosInicialMouseClicked(evt);
+            }
+        });
         jScrollPane12.setViewportView(tablaProcesosSuspendidosInicial);
 
         colaCPU2.setEditable(false);
@@ -703,10 +955,16 @@ public class VistaPlanificador extends javax.swing.JFrame {
         });
 
         barraProgresoNuevosB.setBackground(new java.awt.Color(0, 0, 102));
+        barraProgresoNuevosB.setString("NUEVOS");
+        barraProgresoNuevosB.setStringPainted(true);
 
         barraProgresoCPUB.setBackground(new java.awt.Color(255, 0, 0));
+        barraProgresoCPUB.setString("LIMITADOS POR CPU"); // NOI18N
+        barraProgresoCPUB.setStringPainted(true);
 
         barraProgresoESB.setBackground(new java.awt.Color(0, 153, 153));
+        barraProgresoESB.setString("LIMITADOS POR E/S");
+        barraProgresoESB.setStringPainted(true);
 
         colaESB.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -718,7 +976,22 @@ public class VistaPlanificador extends javax.swing.JFrame {
             new String [] {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
-        ));
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        colaESB.setFocusable(false);
+        colaESB.getTableHeader().setReorderingAllowed(false);
+        colaESB.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaESBMouseClicked(evt);
+            }
+        });
         jScrollPane10.setViewportView(colaESB);
 
         colaCPUB.setModel(new javax.swing.table.DefaultTableModel(
@@ -731,21 +1004,23 @@ public class VistaPlanificador extends javax.swing.JFrame {
             new String [] {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
-        ));
-        jScrollPane13.setViewportView(colaCPUB);
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
 
-        colaNuevosB.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
             }
-        ));
-        jScrollPane14.setViewportView(colaNuevosB);
+        });
+        colaCPUB.setFocusable(false);
+        colaCPUB.getTableHeader().setReorderingAllowed(false);
+        colaCPUB.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaCPUBMouseClicked(evt);
+            }
+        });
+        jScrollPane13.setViewportView(colaCPUB);
 
         colaSOB.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -757,22 +1032,46 @@ public class VistaPlanificador extends javax.swing.JFrame {
             new String [] {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
-        ));
-        colaSOB.setEnabled(false);
-        jScrollPane15.setViewportView(colaSOB);
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
 
-        jButton1.setText("Bloquear");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        colaSOB.setFocusable(false);
+        colaSOB.getTableHeader().setReorderingAllowed(false);
+        colaSOB.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaSOBMouseClicked(evt);
+            }
+        });
+        jScrollPane14.setViewportView(colaSOB);
+
+        botonSuspenderProceso.setText("Suspender");
+        botonSuspenderProceso.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                botonSuspenderProcesoActionPerformed(evt);
             }
         });
 
-        jButton2.setText("Desbloquear");
+        botonDesuspenderProceso.setText("Desuspender");
+        botonDesuspenderProceso.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                botonDesuspenderProcesoActionPerformed(evt);
+            }
+        });
 
-        jButton3.setText("Cambiar Prioridad");
+        botonCambiarPrioridad.setText("Cambiar Prioridad");
+        botonCambiarPrioridad.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                botonCambiarPrioridadActionPerformed(evt);
+            }
+        });
 
-        jSpinner1.setModel(new javax.swing.SpinnerNumberModel(1, 1, 99, 1));
+        spinnerPrioridad.setModel(new javax.swing.SpinnerNumberModel(1, 1, 99, 1));
 
         jButton4.setText("Cambiar ciclos para corte por CPU");
         jButton4.addActionListener(new java.awt.event.ActionListener() {
@@ -783,7 +1082,7 @@ public class VistaPlanificador extends javax.swing.JFrame {
 
         jSpinner2.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
 
-        jButton5.setText("Eliminar");
+        botonEliminarProceso.setText("Eliminar");
 
         jButton6.setText("Insertar");
 
@@ -801,8 +1100,6 @@ public class VistaPlanificador extends javax.swing.JFrame {
         jLabel16.setText("Procesos USER");
 
         jLabel17.setText("Procesos bloqueados");
-
-        jLabel18.setText("Procesos en ejecucion");
 
         jLabel19.setText("Procesos suspendidos");
 
@@ -824,6 +1121,61 @@ public class VistaPlanificador extends javax.swing.JFrame {
         jLabel22.setText("Cantidad de procesos");
 
         barraProgresoSOB.setBackground(new java.awt.Color(0, 0, 102));
+        barraProgresoSOB.setString("SO");
+        barraProgresoSOB.setStringPainted(true);
+
+        etiquetaProcentajeUsoCPUs.setText("0%");
+
+        jLabel24.setText("Procesoso listos");
+
+        etiquetaProcentajeProcesosSuspendidos.setText("0%");
+
+        etiquetaPorcentajeProcesosUSER.setText("0%");
+
+        etiquetaPorcentajeProcesosSO.setText("0%");
+
+        etiquetaPorcentajeProcesosListos.setText("0%");
+
+        etiquetaPorcentajeProcesosBloqueados.setText("0%");
+
+        idDelProcesosAInteractuar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                idDelProcesosAInteractuarActionPerformed(evt);
+            }
+        });
+        idDelProcesosAInteractuar.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                idDelProcesosAInteractuarKeyReleased(evt);
+            }
+        });
+
+        colaNuevosB.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        colaNuevosB.setFocusable(false);
+        colaNuevosB.getTableHeader().setReorderingAllowed(false);
+        colaNuevosB.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaNuevosBMouseClicked(evt);
+            }
+        });
+        jScrollPane16.setViewportView(colaNuevosB);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -831,226 +1183,265 @@ public class VistaPlanificador extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jScrollPane11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel6)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 696, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel1))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jScrollPane12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel24)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(etiquetaPorcentajeProcesosListos)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(barraBloqueadosYEjecucion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jLabel17)
+                                .addGap(6, 6, 6)
+                                .addComponent(etiquetaPorcentajeProcesosBloqueados))
+                            .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(layout.createSequentialGroup()
-                                        .addGap(24, 24, 24)
-                                        .addComponent(jButton4)
+                                        .addComponent(jLabel19)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jSpinner2, javax.swing.GroupLayout.PREFERRED_SIZE, 113, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                        .addGap(18, 18, 18)
+                                        .addComponent(barraSuspendidos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addComponent(etiquetaProcentajeProcesosSuspendidos))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jLabel7)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addComponent(barraUsoDeCPU, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(etiquetaProcentajeUsoCPUs))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jLabel15)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(etiquetaPorcentajeProcesosSO)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(barraSOYUSER, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jLabel16)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(etiquetaPorcentajeProcesosUSER)))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jLabel20)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(ciclosTranscuridos, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                            .addComponent(jLabel21)
+                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                            .addComponent(quantunn, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(layout.createSequentialGroup()
+                                            .addComponent(jLabel22)
+                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                            .addComponent(cantidadProcesos, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE))))))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 81, Short.MAX_VALUE)
+                        .addComponent(jLabel23))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                .addComponent(jScrollPane11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel6)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jScrollPane12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addGroup(layout.createSequentialGroup()
-                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                    .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, 126, Short.MAX_VALUE))
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                                    .addComponent(jButton6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                    .addComponent(jButton5, javax.swing.GroupLayout.DEFAULT_SIZE, 93, Short.MAX_VALUE)))
+                                                .addComponent(jButton4)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(jSpinner2, javax.swing.GroupLayout.PREFERRED_SIZE, 113, javax.swing.GroupLayout.PREFERRED_SIZE))
                                             .addGroup(layout.createSequentialGroup()
-                                                .addComponent(jButton3)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                                .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                        .addGap(12, 12, 12)
-                                        .addComponent(botonPausar, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE))))))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.LEADING)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addGroup(layout.createSequentialGroup()
+                                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                            .addComponent(botonDesuspenderProceso, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                            .addComponent(botonSuspenderProceso, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                            .addComponent(jButton6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                            .addComponent(botonEliminarProceso, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                                    .addGroup(layout.createSequentialGroup()
+                                                        .addComponent(botonCambiarPrioridad)
+                                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                        .addComponent(spinnerPrioridad, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                    .addComponent(idDelProcesosAInteractuar, javax.swing.GroupLayout.DEFAULT_SIZE, 93, Short.MAX_VALUE)
+                                                    .addComponent(botonPausar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))))
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(jLabel5, javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                        .addComponent(jLabel8)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jLabel3)
-                                            .addComponent(poximoProcesoID, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jLabel14)
-                                            .addComponent(poximoProcesoNombre, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jLabel13)
-                                            .addComponent(poximoProcesoTipo, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jLabel12)
-                                            .addComponent(poximoProcesoPrioridad, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jLabel11)
-                                            .addComponent(poximoProcesoDuracion, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                            .addComponent(poximoProcesoTiempoRestante))))
+                                    .addComponent(barraProgresoNuevosA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(barraProgresoESA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(barraProgresoCPUA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(colaCPU1, javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addComponent(barraProgresoSOA, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                                 .addGap(18, 18, 18)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(poximoProcesoCiclosParaES)
-                                    .addComponent(jLabel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(barraProgresoNuevosB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(colaCPU2, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(barraProgresoSOB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                        .addComponent(barraProgresoESB, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(barraProgresoCPUB, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                .addGap(20, 20, 20)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jScrollPane14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jScrollPane13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jScrollPane10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jScrollPane16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                        .addGap(99, 99, 99)
+                                        .addComponent(jLabel3)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jLabel2)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(jLabel10))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                            .addComponent(jLabel5, javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                                .addComponent(jLabel8)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(poximoProcesoID, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addComponent(poximoProcesoNombre, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                    .addComponent(jLabel14))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addComponent(poximoProcesoTipo, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                    .addComponent(jLabel13))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addComponent(poximoProcesoPrioridad, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                    .addComponent(jLabel12))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addComponent(jLabel11)
+                                                    .addGroup(layout.createSequentialGroup()
+                                                        .addComponent(poximoProcesoDuracion, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                        .addComponent(poximoProcesoTiempoRestante, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                        .addGap(18, 18, 18)
+                                        .addComponent(poximoProcesoCiclosParaES, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGap(18, 18, 18)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addComponent(jLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(poximoProcesoParaProximaES))
                                 .addGap(18, 18, 18)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(poximoProcesoDuracionES, javax.swing.GroupLayout.PREFERRED_SIZE, 86, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel17)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(barraBloqueadosYEjecucion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel18))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addGroup(layout.createSequentialGroup()
-                                                .addComponent(jLabel7)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                                .addComponent(barraUsoDeCPU, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                            .addGroup(layout.createSequentialGroup()
-                                                .addComponent(jLabel19)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                                .addComponent(barraSuspendidos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                        .addGap(67, 67, 67)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                            .addComponent(jLabel20)
-                                            .addGroup(layout.createSequentialGroup()
-                                                .addGap(50, 50, 50)
-                                                .addComponent(jLabel21))))
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jLabel15)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(barraSOYUSER, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jLabel16)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(jLabel22)))
-                                .addGap(18, 18, 18)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(quantunn)
-                                    .addComponent(ciclosTranscuridos, javax.swing.GroupLayout.DEFAULT_SIZE, 88, Short.MAX_VALUE)
-                                    .addComponent(cantidadProcesos)))))
-                    .addComponent(jLabel1)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(barraProgresoNuevosA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(barraProgresoESA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(barraProgresoCPUA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                .addComponent(colaCPU1, javax.swing.GroupLayout.Alignment.TRAILING)
-                                .addComponent(barraProgresoSOA, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane4, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane5, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                .addComponent(barraProgresoESB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(barraProgresoCPUB, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(barraProgresoNuevosB, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(colaCPU2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(barraProgresoSOB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addGap(565, 565, 565))
+                                    .addComponent(jLabel9)
+                                    .addComponent(poximoProcesoDuracionES, javax.swing.GroupLayout.PREFERRED_SIZE, 86, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 108, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(jLabel15)
-                                    .addComponent(jLabel16)
-                                    .addComponent(barraSOYUSER, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(12, 12, 12))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel20)
-                                    .addComponent(ciclosTranscuridos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(quantunn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel21))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(cantidadProcesos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel22))
-                                .addGap(11, 11, 11)))
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel18)
-                            .addComponent(jLabel17)
-                            .addComponent(barraBloqueadosYEjecucion, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
                         .addGap(17, 17, 17)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel7)
-                            .addComponent(barraUsoDeCPU, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(14, 14, 14)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel19)
-                            .addComponent(barraSuspendidos, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 30, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(jLabel23))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jLabel11, javax.swing.GroupLayout.Alignment.TRAILING)
-                                .addComponent(jLabel12))
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                        .addComponent(jLabel3)
-                                        .addComponent(jLabel14)
-                                        .addComponent(jLabel13))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                            .addComponent(etiquetaProcentajeProcesosSuspendidos)
+                                            .addGroup(layout.createSequentialGroup()
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                                    .addGroup(layout.createSequentialGroup()
+                                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                                            .addComponent(jLabel7)
+                                                            .addComponent(barraUsoDeCPU, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                        .addGap(8, 8, 8))
+                                                    .addGroup(layout.createSequentialGroup()
+                                                        .addComponent(etiquetaProcentajeUsoCPUs)
+                                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addComponent(barraSuspendidos, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                    .addComponent(jLabel19, javax.swing.GroupLayout.Alignment.TRAILING))))
+                                        .addGap(12, 12, 12)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                .addComponent(jLabel15)
+                                                .addComponent(etiquetaPorcentajeProcesosSO))
+                                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                .addComponent(jLabel16)
+                                                .addComponent(etiquetaPorcentajeProcesosUSER))
+                                            .addComponent(barraSOYUSER, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                            .addComponent(ciclosTranscuridos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addComponent(jLabel20))
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                            .addComponent(quantunn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addComponent(jLabel21))
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                            .addComponent(cantidadProcesos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addComponent(jLabel22))))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                            .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jLabel9))
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                            .addComponent(jLabel2)
-                                            .addComponent(jLabel10))))
+                                            .addComponent(jLabel24)
+                                            .addComponent(etiquetaPorcentajeProcesosListos))
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                            .addComponent(jLabel17)
+                                            .addComponent(etiquetaPorcentajeProcesosBloqueados)))
+                                    .addComponent(barraBloqueadosYEjecucion, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel1)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(poximoProcesoNombre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(poximoProcesoID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(poximoProcesoTipo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(poximoProcesoPrioridad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(poximoProcesoDuracion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(poximoProcesoTiempoRestante, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(poximoProcesoCiclosParaES, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(poximoProcesoParaProximaES, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(poximoProcesoDuracionES, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel8))))
+                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 108, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 33, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel11)
+                            .addComponent(jLabel12))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel3)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jLabel10)
+                                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel9)
+                                .addComponent(jLabel2))))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel13)
+                        .addComponent(jLabel14)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(poximoProcesoNombre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(poximoProcesoID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(poximoProcesoTipo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(poximoProcesoPrioridad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(poximoProcesoDuracion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(poximoProcesoTiempoRestante, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(poximoProcesoCiclosParaES, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(poximoProcesoParaProximaES, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(poximoProcesoDuracionES, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel8))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(colaCPU1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -1073,13 +1464,13 @@ public class VistaPlanificador extends javax.swing.JFrame {
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(colaCPU2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jScrollPane15, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(barraProgresoNuevosB, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jScrollPane14, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(barraProgresoSOB, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(barraProgresoSOB, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane16, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(barraProgresoNuevosB, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(barraProgresoCPUB, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1088,35 +1479,38 @@ public class VistaPlanificador extends javax.swing.JFrame {
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(barraProgresoESB, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jScrollPane10, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel5)
-                    .addComponent(jLabel6))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(jScrollPane12, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
-                        .addComponent(jScrollPane11, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jButton1)
-                                    .addComponent(jButton5))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jButton2)
-                                    .addComponent(jButton6))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jButton3)
-                                    .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addComponent(botonPausar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(74, 74, 74)
+                        .addComponent(botonPausar, javax.swing.GroupLayout.PREFERRED_SIZE, 76, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jButton4)
-                            .addComponent(jSpinner2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addGap(448, 448, 448))
+                            .addComponent(jSpinner2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel5)
+                            .addComponent(jLabel6))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(botonSuspenderProceso)
+                                    .addComponent(botonEliminarProceso)
+                                    .addComponent(idDelProcesosAInteractuar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(botonDesuspenderProceso)
+                                    .addComponent(jButton6))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(botonCambiarPrioridad)
+                                    .addComponent(spinnerPrioridad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(40, 40, 40))
+                            .addComponent(jScrollPane11, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
+                            .addComponent(jScrollPane12, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))))
+                .addGap(31, 31, 31))
         );
 
         pack();
@@ -1130,9 +1524,38 @@ public class VistaPlanificador extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_colaCPU2ActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void botonSuspenderProcesoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonSuspenderProcesoActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jButton1ActionPerformed
+        boolean seBloqueo = true;
+        if(!idDelProcesosAInteractuar.getText().equals("")){
+            seBloqueo = instancePlanificador.suspenderProceso(Integer.valueOf(idDelProcesosAInteractuar.getText()));
+            if(!seBloqueo){
+                JOptionPane.showMessageDialog(null, "La ID ingresada no concuerda con ningun proceso habilitado");
+            }
+        }else if(colaSOA.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaSOA.getValueAt(colaSOA.getSelectedRow(), 0).toString()));
+        }else if(colaSOB.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaSOB.getValueAt(colaSOB.getSelectedRow(), 0).toString()));
+        }else if(colaNuevosA.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaNuevosA.getValueAt(colaNuevosA.getSelectedRow(), 0).toString()));
+        }else if(colaNuevosB.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaNuevosB.getValueAt(colaNuevosB.getSelectedRow(), 0).toString()));
+        }else if(colaCPUA.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaCPUA.getValueAt(colaCPUA.getSelectedRow(), 0).toString()));
+        }else if(colaCPUB.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaCPUB.getValueAt(colaCPUB.getSelectedRow(), 0).toString()));
+        }else if(colaESB.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString()));
+        }else if(colaESA.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString()));
+        }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString()));
+        }
+        if(seBloqueo){
+            actualiazarDatosCriticos();
+        }
+        idDelProcesosAInteractuar.setText("");
+    }//GEN-LAST:event_botonSuspenderProcesoActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         // TODO add your handling code here:
@@ -1155,6 +1578,152 @@ public class VistaPlanificador extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_poximoProcesoParaProximaESActionPerformed
 
+    private void colaSOAMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaSOAMouseClicked
+
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaSOA);
+    }//GEN-LAST:event_colaSOAMouseClicked
+
+    private void idDelProcesosAInteractuarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_idDelProcesosAInteractuarActionPerformed
+
+    }//GEN-LAST:event_idDelProcesosAInteractuarActionPerformed
+
+    private void idDelProcesosAInteractuarKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_idDelProcesosAInteractuarKeyReleased
+        // TODO add your handling code here:
+        if(idDelProcesosAInteractuar.getText().equals("")){
+            desabilitarBotones();
+        }else{
+            habilitarBotones();
+            botonDesuspenderProceso.setEnabled(true);
+        }
+    }//GEN-LAST:event_idDelProcesosAInteractuarKeyReleased
+
+    private void colaNuevosAMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaNuevosAMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaNuevosA);
+    }//GEN-LAST:event_colaNuevosAMouseClicked
+
+    private void colaCPUAMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaCPUAMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaCPUA);
+    }//GEN-LAST:event_colaCPUAMouseClicked
+
+    private void colaESAMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaESAMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaESA);
+    }//GEN-LAST:event_colaESAMouseClicked
+
+    private void colaSOBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaSOBMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaSOB);
+    }//GEN-LAST:event_colaSOBMouseClicked
+
+    private void colaCPUBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaCPUBMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaCPUB);
+    }//GEN-LAST:event_colaCPUBMouseClicked
+
+    private void colaESBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaESBMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaESB);
+    }//GEN-LAST:event_colaESBMouseClicked
+
+    private void tablaProcesosBloqueadosInicialMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tablaProcesosBloqueadosInicialMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(tablaProcesosBloqueadosInicial);
+    }//GEN-LAST:event_tablaProcesosBloqueadosInicialMouseClicked
+
+    private void tablaProcesosSuspendidosInicialMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tablaProcesosSuspendidosInicialMouseClicked
+        // TODO add your handling code here:
+        botonDesuspenderProceso.setEnabled(true);
+        botonEliminarProceso.setEnabled(true);
+        botonCambiarPrioridad.setEnabled(true);
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(tablaProcesosSuspendidosInicial);
+    }//GEN-LAST:event_tablaProcesosSuspendidosInicialMouseClicked
+
+    private void colaNuevosBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaNuevosBMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaNuevosB);
+    }//GEN-LAST:event_colaNuevosBMouseClicked
+
+    private void botonDesuspenderProcesoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonDesuspenderProcesoActionPerformed
+        // TODO add your handling code here:
+        boolean seDesbloqueo = true;
+        if(!idDelProcesosAInteractuar.getText().equals("")){
+            seDesbloqueo = instancePlanificador.reanudarProceso(Integer.valueOf(idDelProcesosAInteractuar.getText()));
+            if(!seDesbloqueo){
+                JOptionPane.showMessageDialog(null, "La ID ingresada no concuerda con ningun proceso habilitado.");
+            }
+        }else{
+            instancePlanificador.reanudarProceso(Integer.parseInt(tablaProcesosSuspendidosInicial.getValueAt(tablaProcesosSuspendidosInicial.getSelectedRow(), 0).toString()));
+        }
+        if(seDesbloqueo){
+            actualiazarDatosCriticos();
+        }
+        idDelProcesosAInteractuar.setText("");
+    }//GEN-LAST:event_botonDesuspenderProcesoActionPerformed
+
+    private void botonCambiarPrioridadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonCambiarPrioridadActionPerformed
+        // TODO add your handling code here:
+        boolean seCambio = true;
+        int id;
+        if(!idDelProcesosAInteractuar.getText().equals("")){
+            seCambio = instancePlanificador.modificarPrioridad(Integer.parseInt(idDelProcesosAInteractuar.getText()), Integer.parseInt(spinnerPrioridad.getValue().toString()));
+            if(!seCambio){
+                JOptionPane.showMessageDialog(null, "La ID ingresada no concuerda con ningun proceso habilitado");
+            }
+        }else if(colaSOA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaSOA.getValueAt(colaSOA.getSelectedRow(), 0).toString());
+            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }else if(colaSOB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaSOB.getValueAt(colaSOB.getSelectedRow(), 0).toString());
+            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }else if(colaNuevosA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaNuevosA.getValueAt(colaNuevosA.getSelectedRow(), 0).toString());
+            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }else if(colaNuevosB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaNuevosB.getValueAt(colaNuevosB.getSelectedRow(), 0).toString());
+            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }else if(colaCPUA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaCPUA.getValueAt(colaCPUB.getSelectedRow(), 0).toString());
+            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }else if(colaCPUB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaCPUB.getValueAt(colaCPUA.getSelectedRow(), 0).toString());
+            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }else if(colaESB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString());
+            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }else if(colaESA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString());
+            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
+            id = Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString());
+            instancePlanificador.modificarPrioridad(id, Integer.parseInt(spinnerPrioridad.getValue().toString()));
+        }   
+        if(seCambio){
+            actualiazarDatosCriticos();
+        }
+        idDelProcesosAInteractuar.setText("");
+    }//GEN-LAST:event_botonCambiarPrioridadActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -1162,26 +1731,16 @@ public class VistaPlanificador extends javax.swing.JFrame {
         
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                System.out.println(info);
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Creador_CPUs.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Creador_CPUs.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Creador_CPUs.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(Creador_CPUs.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Creador_CPUs().setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            new Creador_CPUs().setVisible(true);
         });
     }
 
@@ -1198,7 +1757,11 @@ public class VistaPlanificador extends javax.swing.JFrame {
     private javax.swing.JProgressBar barraSOYUSER;
     private javax.swing.JProgressBar barraSuspendidos;
     private javax.swing.JProgressBar barraUsoDeCPU;
+    private javax.swing.JButton botonCambiarPrioridad;
+    private javax.swing.JButton botonDesuspenderProceso;
+    private javax.swing.JButton botonEliminarProceso;
     private javax.swing.JButton botonPausar;
+    private javax.swing.JButton botonSuspenderProceso;
     private javax.swing.JTextField cantidadProcesos;
     private javax.swing.JTextField ciclosTranscuridos;
     private javax.swing.JTextField colaCPU1;
@@ -1211,11 +1774,14 @@ public class VistaPlanificador extends javax.swing.JFrame {
     private javax.swing.JTable colaNuevosB;
     private javax.swing.JTable colaSOA;
     private javax.swing.JTable colaSOB;
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
+    private javax.swing.JLabel etiquetaPorcentajeProcesosBloqueados;
+    private javax.swing.JLabel etiquetaPorcentajeProcesosListos;
+    private javax.swing.JLabel etiquetaPorcentajeProcesosSO;
+    private javax.swing.JLabel etiquetaPorcentajeProcesosUSER;
+    private javax.swing.JLabel etiquetaProcentajeProcesosSuspendidos;
+    private javax.swing.JLabel etiquetaProcentajeUsoCPUs;
+    private javax.swing.JTextField idDelProcesosAInteractuar;
     private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
@@ -1226,12 +1792,13 @@ public class VistaPlanificador extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
-    private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel20;
     private javax.swing.JLabel jLabel21;
     private javax.swing.JLabel jLabel22;
+    private javax.swing.JLabel jLabel23;
+    private javax.swing.JLabel jLabel24;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
@@ -1245,12 +1812,11 @@ public class VistaPlanificador extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane12;
     private javax.swing.JScrollPane jScrollPane13;
     private javax.swing.JScrollPane jScrollPane14;
-    private javax.swing.JScrollPane jScrollPane15;
+    private javax.swing.JScrollPane jScrollPane16;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
-    private javax.swing.JSpinner jSpinner1;
     private javax.swing.JSpinner jSpinner2;
     private javax.swing.JTextField poximoProcesoCiclosParaES;
     private javax.swing.JTextField poximoProcesoDuracion;
@@ -1262,6 +1828,7 @@ public class VistaPlanificador extends javax.swing.JFrame {
     private javax.swing.JTextField poximoProcesoTiempoRestante;
     private javax.swing.JTextField poximoProcesoTipo;
     private javax.swing.JTextField quantunn;
+    private javax.swing.JSpinner spinnerPrioridad;
     private javax.swing.JTable tablaEjecucion;
     private javax.swing.JTable tablaProcesosBloqueadosInicial;
     private javax.swing.JTable tablaProcesosSuspendidosInicial;

@@ -98,6 +98,15 @@ public class ListaProcesos {
            return nuevaLista;
        } 
     }
+    
+    public ListaProcesos reSorted(){
+        ArrayList<Proceso> ant = this.toArray();
+        ListaProcesos result = new ListaProcesos();
+        for (Proceso p : ant){
+            result.insertar(p.getPrioridad(), p);
+        }
+        return result;
+    }
 
     public boolean esVacia() {
         return this.primero == null;

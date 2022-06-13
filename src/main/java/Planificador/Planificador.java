@@ -19,8 +19,8 @@ public class Planificador { //Esta clase tiene que ser singleton
     private ArrayList<CPU> CPUs;
     private final ListaProcesos[] colaProcesos1 = new ListaProcesos[4];
     private final ListaProcesos[] colaProcesos2 = new ListaProcesos[4];
-    private final ListaProcesos suspendidos = new ListaProcesos();
-    private final ListaProcesos bloqueadosPorES = new ListaProcesos();
+    private final HashMap<Proceso, String> suspendidos = new HashMap<>();
+    private ListaProcesos bloqueadosPorES = new ListaProcesos();
     
     public boolean cambioContextoColas = false;
     
@@ -60,52 +60,131 @@ public class Planificador { //Esta clase tiene que ser singleton
     }
     
     public boolean modificarPrioridad(int idProceso, int prioridad){
-        Proceso proceso = this.colaDeEjecucion[0].buscar(idProceso);
-        if(proceso == null){
-            proceso = this.colaDeEjecucion[1].buscar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeEjecucion[2].buscar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeEjecucion[3].buscar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeExpirados[0].buscar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeExpirados[2].buscar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeExpirados[3].buscar(idProceso);
-        }if(proceso == null){
-            proceso = this.bloqueadosPorES.buscar(idProceso);
-        }if(proceso == null){
-            return false;
+        Proceso proceso = this.colaDeEjecucion[0].eliminar(idProceso);
+        if(proceso != null){
+            proceso.cambiarPrioridad(prioridad);
+            this.colaDeEjecucion[0].insertar(proceso.getPrioridad(), proceso);
+            return true;
         }
-        return proceso.cambiarPrioridad(prioridad);
+        proceso = this.colaDeEjecucion[1].eliminar(idProceso);
+        if(proceso != null){
+            proceso.cambiarPrioridad(prioridad);
+            this.colaDeEjecucion[1].insertar(proceso.getPrioridad(), proceso);
+            return true;
+        }
+        proceso = this.colaDeEjecucion[2].eliminar(idProceso);
+        if(proceso != null){
+            proceso.cambiarPrioridad(prioridad);
+            this.colaDeEjecucion[2].insertar(proceso.getPrioridad(), proceso);
+            return true;
+        }
+        proceso = this.colaDeEjecucion[3].eliminar(idProceso);
+        if(proceso != null){
+            proceso.cambiarPrioridad(prioridad);
+            this.colaDeEjecucion[3].insertar(proceso.getPrioridad(), proceso);
+            return true;
+        }
+        proceso = this.colaDeExpirados[0].eliminar(idProceso);
+        if(proceso != null){
+            proceso.cambiarPrioridad(prioridad);
+            this.colaDeExpirados[0].insertar(proceso.getPrioridad(), proceso);
+            return true;
+        }
+        proceso = this.colaDeExpirados[2].eliminar(idProceso);
+        if(proceso != null){
+            proceso.cambiarPrioridad(prioridad);
+            this.colaDeExpirados[2].insertar(proceso.getPrioridad(), proceso);
+            return true;
+        }
+        proceso = this.colaDeExpirados[3].eliminar(idProceso);
+        if(proceso != null){
+            proceso.cambiarPrioridad(prioridad);
+            this.colaDeExpirados[3].insertar(proceso.getPrioridad(), proceso);
+            return true;
+        }
+        proceso = this.bloqueadosPorES.eliminar(idProceso);
+        if(proceso != null){
+            proceso.cambiarPrioridad(prioridad);
+            this.bloqueadosPorES.insertar(proceso.getPrioridad(), proceso);
+            return true;
+        }
+        return false;
+        
     }
     
     public void modificarTiempoCPU(int nuevoTiempo){
         this.tiempoDeEjecucion = nuevoTiempo;
     }
     
-    public boolean bloquearProceso(int idProceso){
+    public boolean suspenderProceso(int idProceso){
         Proceso proceso = this.colaDeEjecucion[0].eliminar(idProceso);
-        if(proceso == null){
-            proceso = this.colaDeEjecucion[1].eliminar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeEjecucion[2].eliminar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeEjecucion[3].eliminar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeExpirados[0].eliminar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeExpirados[2].eliminar(idProceso);
-        }if(proceso == null){
-            proceso = this.colaDeExpirados[3].eliminar(idProceso);
-        }if(proceso == null){
-            proceso = this.bloqueadosPorES.eliminar(idProceso);
-        }if(proceso == null){
-            return false;
+        if(proceso != null){
+            this.suspendidos.put(proceso, "EJE0");
+            return true;
         }
-        this.suspendidos.insertar(1, proceso);
-        return true;
+        proceso = this.colaDeEjecucion[1].eliminar(idProceso);
+        if(proceso != null){
+            this.suspendidos.put(proceso, "EJE1");
+            return true;
+        }
+        proceso = this.colaDeEjecucion[2].eliminar(idProceso);
+        if(proceso != null){
+            this.suspendidos.put(proceso, "EJE2");
+            return true;
+        }
+        proceso = this.colaDeEjecucion[3].eliminar(idProceso);
+        if(proceso != null){
+            this.suspendidos.put(proceso, "EJE3");
+            return true;
+        }
+        proceso = this.colaDeExpirados[0].eliminar(idProceso);
+        if(proceso != null){
+            this.suspendidos.put(proceso, "EXP0");
+            return true;
+        }
+        proceso = this.colaDeExpirados[2].eliminar(idProceso);
+        if(proceso != null){
+            this.suspendidos.put(proceso, "EXP2");
+            return true;
+        }
+        proceso = this.colaDeExpirados[3].eliminar(idProceso);
+        if(proceso != null){
+            this.suspendidos.put(proceso, "EXP3");
+            return true;
+        }
+        proceso = this.bloqueadosPorES.eliminar(idProceso);
+        if(proceso != null){
+            this.suspendidos.put(proceso, "BLO");
+            return true;
+        }
+        return false;
+    }
+    
+    public boolean reanudarProceso(int idProceso){
+        for(Proceso p : this.suspendidos.keySet()){
+            if (p.getID().equals(idProceso)){
+                String cola = this.suspendidos.get(p);
+                if(cola.contains("EJE")){
+                    switch (cola.charAt(3)) {
+                        case '0' -> this.colaDeEjecucion[0].insertar(p.getPrioridad(), p);
+                        case '1' -> this.colaDeEjecucion[1].insertar(p.getPrioridad(), p);
+                        case '2' -> this.colaDeEjecucion[2].insertar(p.getPrioridad(), p);
+                        default -> this.colaDeEjecucion[3].insertar(p.getPrioridad(), p);
+                    }
+                }else if(cola.contains("EXP")){
+                    switch (cola.charAt(3)) {
+                        case '0' -> this.colaDeExpirados[0].insertar(p.getPrioridad(), p);
+                        case '2' -> this.colaDeExpirados[2].insertar(p.getPrioridad(), p);
+                        default -> this.colaDeEjecucion[3].insertar(p.getPrioridad(), p);
+                    }
+                }else{
+                    this.bloqueadosPorES.insertar(p.getValoresEjecucionProceso()[2], p);
+                }
+                this.suspendidos.remove(p);
+                return true;
+            }
+        }
+        return false;
     }
     
     public void ingresarProcesos(LinkedList<Proceso> procesosNuevos){
@@ -151,21 +230,18 @@ public class Planificador { //Esta clase tiene que ser singleton
     }
     
     private int obtenerCantidadProcesos(){
-        int cantidadProcesos = 0;
+        int cantidadProcesosTotales = 0;
         
-        cantidadProcesos += getProcesosListos();
-        
-        cantidadProcesos += getProcesosExpirados();
-        
-        cantidadProcesos += getCantProceosBloqueados();
-        cantidadProcesos += getProcesosSuspendidos();
+        cantidadProcesosTotales += getProcesosListos();       
+        cantidadProcesosTotales += getCantProceosBloqueados();
+        cantidadProcesosTotales += getProcesosSuspendidos();
         
         for (CPU c : this.CPUs){
             if(c.getProcesoEnejecucion() != null){
-                cantidadProcesos++;
+                cantidadProcesosTotales++;
             }
         }
-        return cantidadProcesos;
+        return cantidadProcesosTotales;
     }
     
     public Proceso seleccionarProceso(){
@@ -179,11 +255,7 @@ public class Planificador { //Esta clase tiene que ser singleton
             }else if(!this.colaDeEjecucion[3].esVacia()){
                 return this.colaDeEjecucion[3].eliminarUltimo();
             }else{
-                if(this.cambioContextoColas){
-                    this.cambioContextoColas = false;
-                }else{
-                    this.cambioContextoColas = true;
-                }
+                this.cambioContextoColas = !this.cambioContextoColas;
                 if(this.colaProcesos2[1] == null){
                     this.colaProcesos2[1] = this.colaProcesos1[1];
                     this.colaDeEjecucion = this.colaProcesos2;
@@ -220,6 +292,7 @@ public class Planificador { //Esta clase tiene que ser singleton
     
     private void actualizarBloqueados(){
         ArrayList<Proceso> listaBloqueados = this.bloqueadosPorES.toArray();
+        ListaProcesos bloqueadosReSorted = new ListaProcesos();
         for(Proceso p : listaBloqueados){
             if(p.ejecutarCicloEnBloqueo()){
                 this.bloqueadosPorES.eliminar(p.getID());
@@ -228,8 +301,12 @@ public class Planificador { //Esta clase tiene que ser singleton
                 }else{
                     this.colaDeExpirados[3].insertar(p.getPrioridad(), p);
                 }
+            }else{
+                bloqueadosReSorted.insertar(p.getValoresEjecucionProceso()[2], p);
             }
         }
+        this.bloqueadosPorES = bloqueadosReSorted;
+        
     }
     
     public boolean getHuvoCambioContextoColas(){
@@ -268,8 +345,8 @@ public class Planificador { //Esta clase tiene que ser singleton
         return this.bloqueadosPorES.toArray();
     }
     
-    public ArrayList<Proceso> getSuspendidos(){
-        return this.suspendidos.toArray();
+    public Set<Proceso> getSuspendidos(){
+        return this.suspendidos.keySet();
     }
     
     public ArrayList<Proceso> getProcesosEnEjecucion(){
@@ -292,12 +369,28 @@ public class Planificador { //Esta clase tiene que ser singleton
         return this.tiempoDeEjecucion;
     }
     
-    public int getProcesosSO(){
-        return (this.colaDeEjecucion[0].size() + this.colaDeExpirados[0].size());
+    public int getCantProcesosSO(){
+        int cantProcesosSO = this.colaDeEjecucion[0].size() + this.colaDeExpirados[0].size();
+        for (CPU c : this.CPUs){
+            if(c.getProcesoEnejecucion() != null && c.getProcesoEnejecucion().isOfSO()){
+                cantProcesosSO++;
+            }
+        }
+        for(Proceso p : bloqueadosPorES.toArray()){
+            if(p.isOfSO()){
+                cantProcesosSO++;
+            }
+        }
+        for(Proceso p : suspendidos.keySet()){
+            if(p.isOfSO()){
+                cantProcesosSO++;
+            }
+        }
+        return cantProcesosSO;
     }
     
     public int getProcesosUser(){
-        return (this.cantidadProcesos - getProcesosSO());
+        return (this.cantidadProcesos - getCantProcesosSO());
     }
     
     public int getProcesosListos(){
@@ -308,21 +401,15 @@ public class Planificador { //Esta clase tiene que ser singleton
         cantProcesos += this.colaDeEjecucion[2].size();
         cantProcesos += this.colaDeEjecucion[3].size();
         
-        return cantProcesos;
-    }
-    
-    public int getCantProceosBloqueados(){
-        return this.bloqueadosPorES.size();
-    }
-    
-    public int getProcesosExpirados(){
-        int cantProcesos = 0;
-        
         cantProcesos += this.colaDeExpirados[0].size();
         cantProcesos += this.colaDeExpirados[2].size();
         cantProcesos += this.colaDeExpirados[3].size();
         
         return cantProcesos;
+    }
+    
+    public int getCantProceosBloqueados(){
+        return this.bloqueadosPorES.size();
     }
     
     public int getProcesosSuspendidos(){

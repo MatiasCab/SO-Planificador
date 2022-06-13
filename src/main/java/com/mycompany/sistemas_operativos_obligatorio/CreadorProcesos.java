@@ -23,7 +23,7 @@ public class CreadorProcesos extends javax.swing.JFrame {
      * @param tiempoSegs
      * @param cantCiclosEjecucionCPUs
      */
-    public CreadorProcesos(int cantCPUs, int tiempoSegs, int cantCiclosEjecucionCPUs) {
+    public CreadorProcesos(int cantCPUs, float tiempoSegs, int cantCiclosEjecucionCPUs) {
         
         initComponents();
         
@@ -87,7 +87,12 @@ public class CreadorProcesos extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         spinnerCargarProcesos = new javax.swing.JSpinner();
         jScrollPane2 = new javax.swing.JScrollPane();
-        tablaProcesosIncial = new javax.swing.JTable();
+        tablaProcesosIncial = new javax.swing.JTable(){
+            @Override
+            public boolean isCellEditable(int rows, int columns){
+                return false;
+            }
+        };
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -184,12 +189,6 @@ public class CreadorProcesos extends javax.swing.JFrame {
             }
         });
 
-        tablaProcesosIncial = new javax.swing.JTable(){
-            @Override
-            public boolean isCellEditable(int rows, int columns){
-                return false;
-            }
-        };
         tablaProcesosIncial.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
@@ -460,6 +459,18 @@ public class CreadorProcesos extends javax.swing.JFrame {
             datos[3] = i+40;
             datos[4] = 0;
             datos[5] = 0;
+        
+            tablaProcesos.addRow(datos);
+        }
+        
+        for (int i = 0; i < 10; i++){
+            Object[] datos = new Object[6];
+            datos[0] = "p"+i;
+            datos[1] = "USER";
+            datos[2] = i;
+            datos[3] = i+100;
+            datos[4] = 5;
+            datos[5] = 3;
         
             tablaProcesos.addRow(datos);
         }

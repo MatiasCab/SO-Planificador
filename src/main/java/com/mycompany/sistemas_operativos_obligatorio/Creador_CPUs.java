@@ -59,7 +59,7 @@ public class Creador_CPUs extends javax.swing.JFrame {
             }
         });
 
-        duracionCiclos.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
+        duracionCiclos.setModel(new javax.swing.SpinnerNumberModel(1.0f, 0.1f, null, 0.1f));
 
         jLabel5.setText("Cantidad CPUs");
 
@@ -130,7 +130,7 @@ public class Creador_CPUs extends javax.swing.JFrame {
     private void botonSiguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonSiguienteActionPerformed
         // TODO add your handling code here:
         int cantCPUs = (int) cantidadCPUs.getValue();
-        int duracionSegs = (int) duracionCiclos.getValue();
+        float duracionSegs = (float) duracionCiclos.getValue();
         int ciclosDeUsoProcesoCPUs = (int) cantidadCiclosUsoProceso.getValue();
         System.out.println(cantCPUs + "-"+ duracionSegs);
         

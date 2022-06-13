@@ -20,7 +20,7 @@ public class Proceso {
     
     private final boolean isOfSO;
     
-    private final int iD;
+    private final Comparable iD;
     
     private int duracion;
     
@@ -45,12 +45,8 @@ public class Proceso {
         this.valoresEjecucionProceso[2] = duracionES;
     }
     
-    public boolean cambiarPrioridad(int prioridad){
-        if(prioridad >= 1 && prioridad <= 99){
-            this.prioridad = prioridad;
-            return true;
-        }
-        return false;
+    public void cambiarPrioridad(int prioridad){
+        this.prioridad = prioridad;
     }
     
     public void ejecutarCiclo(){
@@ -68,7 +64,7 @@ public class Proceso {
         return false;
     }
     
-    public int getID(){
+    public Comparable getID(){
         return this.iD;
     }
     
