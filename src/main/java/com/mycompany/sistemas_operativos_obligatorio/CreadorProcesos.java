@@ -174,7 +174,7 @@ public class CreadorProcesos extends javax.swing.JFrame {
             }
         });
 
-        tipoProceso.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "USER", "SO" }));
+        tipoProceso.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "USER", "SO-A.", "SO-N.A." }));
         tipoProceso.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 tipoProcesoActionPerformed(evt);
@@ -271,7 +271,7 @@ public class CreadorProcesos extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(jScrollPane2)))
-                .addContainerGap(18, Short.MAX_VALUE))
+                .addContainerGap(13, Short.MAX_VALUE))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
                     .addContainerGap()
@@ -424,13 +424,14 @@ public class CreadorProcesos extends javax.swing.JFrame {
         int filas = tablaProcesosIncial.getRowCount();
         for (int i = 0; i < filas; i++){
             String nombre = tablaProcesos.getValueAt(i, 0).toString();
-            boolean tipo = "SO".equals(tablaProcesos.getValueAt(i, 1).toString());
+            boolean tipo = (tablaProcesos.getValueAt(i, 1).toString()).contains("SO");
+            boolean apropiativo = ((tablaProcesos.getValueAt(i, 1).toString()).equals("SO-A.") | !tipo);
             int prioridad = (int) tablaProcesos.getValueAt(i, 2);
             int duracion = (int) tablaProcesos.getValueAt(i, 3);
             int tempCorteES = (int) tablaProcesos.getValueAt(i, 4);
             int duracionES = (int) tablaProcesos.getValueAt(i, 5);
             
-            listaProcesos.add(new Proceso(nombre, prioridad, tipo, duracion, tempCorteES, duracionES));
+            listaProcesos.add(new Proceso(nombre, prioridad, tipo, apropiativo, duracion, tempCorteES, duracionES));
         }
         
         limpiarTabla();

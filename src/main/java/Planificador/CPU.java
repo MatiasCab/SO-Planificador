@@ -36,7 +36,7 @@ public class CPU {
         this.tiempoEjecucionActual = nuevoTiempo;
     }
     
-    public boolean ejecutarCiclo(int tiempoDeEjecucion, ListaProcesos[] colaDeExpirados, ListaProcesos bloqueados){
+    public boolean ejecutarCiclo(int tiempoDeEjecucion, ListaProcesos[] colaDeExpirados, ListaProcesos bloqueados, ListaProcesos procesosSO){
         
         if (this.enEjecucion != null){
             
@@ -54,17 +54,19 @@ public class CPU {
                 this.tiempoEjecucionActual = tiempoDeEjecucion;
                 return false;
             } else if (this.tiempoEjecucionActual == 0){
-                this.enEjecucion.addEstadisticasData(true);
-                if (this.enEjecucion.isOfSO()){
-                    colaDeExpirados[0].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
-                }else if (this.enEjecucion.isLimitedForCPU()) {
-                    colaDeExpirados[2].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
-                }else{
-                    colaDeExpirados[3].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
+                if(this.enEjecucion.getIsApropiativo()){
+                    this.enEjecucion.addEstadisticasData(true);
+                    if (this.enEjecucion.isOfSO()){
+                        procesosSO.insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
+                    }else if (this.enEjecucion.isLimitedForCPU()) {
+                        colaDeExpirados[3].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
+                    }else{
+                        colaDeExpirados[2].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
+                    }
+                    this.enEjecucion = null;
+                    this.tiempoEjecucionActual = tiempoDeEjecucion;
+                    return false;
                 }
-                this.enEjecucion = null;
-                this.tiempoEjecucionActual = tiempoDeEjecucion;
-                return false;
             }
             return true;
         }else{

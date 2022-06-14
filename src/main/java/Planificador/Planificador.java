@@ -125,11 +125,7 @@ public class Planificador { //Esta clase tiene que ser singleton
     }
     
     public boolean suspenderProceso(int idProceso){
-        Proceso proceso = this.colaDeEjecucion[0].eliminar(idProceso);
-        if(proceso != null){
-            this.suspendidos.put(proceso, "EJE0");
-            return true;
-        }
+        Proceso proceso;
         proceso = this.colaDeEjecucion[1].eliminar(idProceso);
         if(proceso != null){
             this.suspendidos.put(proceso, "EJE1");
@@ -145,11 +141,6 @@ public class Planificador { //Esta clase tiene que ser singleton
             this.suspendidos.put(proceso, "EJE3");
             return true;
         }
-        proceso = this.colaDeExpirados[0].eliminar(idProceso);
-        if(proceso != null){
-            this.suspendidos.put(proceso, "EXP0");
-            return true;
-        }
         proceso = this.colaDeExpirados[2].eliminar(idProceso);
         if(proceso != null){
             this.suspendidos.put(proceso, "EXP2");
@@ -162,17 +153,18 @@ public class Planificador { //Esta clase tiene que ser singleton
         }
         proceso = this.bloqueadosPorES.eliminar(idProceso);
         if(proceso != null){
-            this.suspendidos.put(proceso, "BLO");
-            return true;
+            if(proceso.isOfSO()){
+                this.bloqueadosPorES.insertar(proceso.getValoresEjecucionProceso()[2], proceso);
+            }else{
+                this.suspendidos.put(proceso, "BLO");
+                return true;
+            }
         }
         return false;
     }
     
     public boolean eliminarProceso(int idProceso){
-        Proceso proceso = this.colaDeEjecucion[0].eliminar(idProceso);
-        if(proceso != null){
-            return true;
-        }
+        Proceso proceso;
         proceso = this.colaDeEjecucion[1].eliminar(idProceso);
         if(proceso != null){
             return true;
@@ -182,10 +174,6 @@ public class Planificador { //Esta clase tiene que ser singleton
             return true;
         }
         proceso = this.colaDeEjecucion[3].eliminar(idProceso);
-        if(proceso != null){
-            return true;
-        }
-        proceso = this.colaDeExpirados[0].eliminar(idProceso);
         if(proceso != null){
             return true;
         }
@@ -199,12 +187,19 @@ public class Planificador { //Esta clase tiene que ser singleton
         }
         proceso = this.bloqueadosPorES.eliminar(idProceso);
         if(proceso != null){
+            if(proceso.isOfSO()){
+                this.bloqueadosPorES.insertar(proceso.getValoresEjecucionProceso()[2], proceso);
+                return false;
+            }
             return true;
         }        
         for(Proceso p : this.suspendidos.keySet()){
             if(p.getID().compareTo(idProceso) == 0){
-                this.suspendidos.remove(p);
-                return true;
+                if(!p.isOfSO()){
+                    this.suspendidos.remove(p);
+                    return true; 
+                }
+                return false;
             }
         }
         return false;
@@ -216,14 +211,12 @@ public class Planificador { //Esta clase tiene que ser singleton
                 String cola = this.suspendidos.get(p);
                 if(cola.contains("EJE")){
                     switch (cola.charAt(3)) {
-                        case '0' -> this.colaDeEjecucion[0].insertar(p.getPrioridad(), p);
                         case '1' -> this.colaDeEjecucion[1].insertar(p.getPrioridad(), p);
                         case '2' -> this.colaDeEjecucion[2].insertar(p.getPrioridad(), p);
                         default -> this.colaDeEjecucion[3].insertar(p.getPrioridad(), p);
                     }
                 }else if(cola.contains("EXP")){
                     switch (cola.charAt(3)) {
-                        case '0' -> this.colaDeExpirados[0].insertar(p.getPrioridad(), p);
                         case '2' -> this.colaDeExpirados[2].insertar(p.getPrioridad(), p);
                         default -> this.colaDeEjecucion[3].insertar(p.getPrioridad(), p);
                     }
@@ -282,7 +275,7 @@ public class Planificador { //Esta clase tiene que ser singleton
         estaOcupado = true;
         this.cambioContextoColas = false;
         for (CPU c : this.CPUs){
-            if(!c.ejecutarCiclo(this.tiempoDeEjecucion, this.colaDeExpirados, this.bloqueadosPorES)){
+            if(!c.ejecutarCiclo(this.tiempoDeEjecucion, this.colaDeExpirados, this.bloqueadosPorES, this.colaDeEjecucion[0])){
                 c.asignarProceso(seleccionarProceso());
             }    
         }
@@ -360,9 +353,13 @@ public class Planificador { //Esta clase tiene que ser singleton
             if(p.ejecutarCicloEnBloqueo()){
                 this.bloqueadosPorES.eliminar(p.getID());
                 if(p.isOfSO()){
-                    this.colaDeExpirados[0].insertar(p.getPrioridad(), p);
+                    this.colaDeEjecucion[0].insertar(p.getPrioridad(), p);
                 }else{
-                    this.colaDeExpirados[3].insertar(p.getPrioridad(), p);
+                    if(p.isLimitedForCPU()){
+                        this.colaDeExpirados[3].insertar(p.getPrioridad(), p);
+                    }else{
+                        this.colaDeExpirados[2].insertar(p.getPrioridad(), p);
+                    }
                 }
             }else{
                 bloqueadosReSorted.insertar(p.getValoresEjecucionProceso()[2], p);

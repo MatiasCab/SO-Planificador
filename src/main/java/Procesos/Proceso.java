@@ -20,6 +20,8 @@ public class Proceso {
     
     private final boolean isOfSO;
     
+    private final boolean isApropiativo;
+    
     private final Comparable iD;
     
     private int duracion;
@@ -32,10 +34,11 @@ public class Proceso {
     
     private int[] valoresEjecucionProceso = new int[3];
     
-    public Proceso(String nombre, int prioridad, boolean isOfSO, int duracion, int tiempoCorteES, int duracionES){
+    public Proceso(String nombre, int prioridad, boolean isOfSO, boolean isApropiativo, int duracion, int tiempoCorteES, int duracionES){
         this.nombre = nombre;
         this.prioridad = prioridad;
         this.isOfSO = isOfSO;
+        this.isApropiativo = isApropiativo;
         this.duracion = duracion;
         this.tiempoCorteES = tiempoCorteES;
         this.duracionES = duracionES;
@@ -82,6 +85,10 @@ public class Proceso {
     
     public boolean isOfSO(){
         return this.isOfSO;
+    }
+    
+    public boolean getIsApropiativo(){
+        return this.isApropiativo;
     }
     
     public int getTiemporCorteES(){

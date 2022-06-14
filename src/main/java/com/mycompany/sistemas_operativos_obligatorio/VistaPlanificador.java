@@ -237,12 +237,21 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 datos[0] = contador;
                 datos[1] = p.getID();
                 datos[2] = p.getNombre();
-                datos[3] = (p.isOfSO() ? "SO" : "USER");
+                if(p.isOfSO()){
+                    datos[3] = (p.getIsApropiativo() ? "SO-A." : "SO-N.A.");
+                }else{
+                    datos[3] = "USER";
+                }
                 datos[4] = p.getPrioridad();
                 datos[5] = p.getValoresEjecucionProceso()[0];
                 datos[6] = (-(((p.getValoresEjecucionProceso()[0] * 100) / p.getDuracion())-100) + "%");
                 datos[7] = (p.getValoresEjecucionProceso()[1] < 0 ? 0 : p.getValoresEjecucionProceso()[1]);
-                datos[8] = instancePlanificador.getTiempoEjecucionRestanteProceso(contador - 1);
+                if(p.getIsApropiativo()){
+                    datos[8] = instancePlanificador.getTiempoEjecucionRestanteProceso(contador - 1);
+                }else{
+                    datos[8] = "-";
+
+                }
             }
             tablaProcesosEjecucion.addRow(datos);
             tablaEjecucion.getColumnModel().getColumn(6).setCellRenderer(new RenderEjecucion());
@@ -260,7 +269,11 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         for(Proceso p : listaBloqueados){
             datos[0] = p.getID();
             datos[1] = p.getNombre();
-            datos[2] = (p.isOfSO() ? "SO" : "USER");
+            if(p.isOfSO()){
+                    datos[2] = (p.getIsApropiativo() ? "SO-A." : "SO-N.A.");
+                }else{
+                    datos[2] = "USER";
+            }
             datos[3] = p.getPrioridad();
             datos[4] = p.getDuracionES();
             datos[5] = p.getValoresEjecucionProceso()[2];
@@ -278,7 +291,11 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         for(Proceso p : listaSuspendidos){
             datos[0] = p.getID();
             datos[1] = p.getNombre();
-            datos[2] = (p.isOfSO() ? "SO" : "USER");
+            if(p.isOfSO()){
+                datos[2] = (p.getIsApropiativo() ? "SO-A." : "SO-N.A.");
+            }else{
+                datos[2] = "USER";
+            }
             datos[3] = p.getPrioridad();
             datos[4] = (-(((p.getValoresEjecucionProceso()[0] * 100) / p.getDuracion())-100) + "%");
             tablaProcesosSuspendidos.addRow(datos);
@@ -379,7 +396,11 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 Proceso p = listaProcesos.get(i);
                 datos[0] = p.getID();
                 datos[1] = p.getNombre();
-                datos[2] = (p.isOfSO() ? "SO" : "USER");
+                if(p.isOfSO()){
+                    datos[2] = (p.getIsApropiativo() ? "SO-A." : "SO-N.A.");
+                }else{
+                    datos[2] = "USER";
+                }
                 datos[3] = p.getPrioridad();
                 datos[4] = (-(((p.getValoresEjecucionProceso()[0] * 100) / p.getDuracion())-100) + "%");
                 datos[5] = p.getTiemporCorteES();
@@ -519,6 +540,11 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             poximoProcesoID.setText(String.valueOf(proceso.getID()));
             poximoProcesoNombre.setText(proceso.getNombre());
             poximoProcesoTipo.setText((proceso.isOfSO() ? "SO" : "USER"));
+            if(proceso.isOfSO()){
+                poximoProcesoTipo.setText(proceso.getIsApropiativo() ? "SO-A." : "SO-N.A.");
+            }else{
+                poximoProcesoTipo.setText("USER");
+            }
             poximoProcesoPrioridad.setText(String.valueOf(proceso.getPrioridad()));
             poximoProcesoDuracion.setText(String.valueOf(proceso.getDuracion()));
             poximoProcesoTiempoRestante.setText(String.valueOf(proceso.getValoresEjecucionProceso()[0]));
@@ -827,11 +853,11 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         barraProgresoNuevosA.setStringPainted(true);
 
         barraProgresoCPUA.setBackground(new java.awt.Color(255, 0, 0));
-        barraProgresoCPUA.setString("LIMITADOS POR CPU");
+        barraProgresoCPUA.setString("LIMITADOS POR E/S");
         barraProgresoCPUA.setStringPainted(true);
 
         barraProgresoESA.setBackground(new java.awt.Color(0, 153, 153));
-        barraProgresoESA.setString("LIMITADOS POR E/S");
+        barraProgresoESA.setString("LIMITADOS POR CPU");
         barraProgresoESA.setStringPainted(true);
 
         barraProgresoSOA.setBackground(Color.BLACK);
@@ -1013,11 +1039,11 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         barraProgresoNuevosB.setStringPainted(true);
 
         barraProgresoCPUB.setBackground(new java.awt.Color(255, 0, 0));
-        barraProgresoCPUB.setString("LIMITADOS POR CPU"); // NOI18N
+        barraProgresoCPUB.setString("LIMITADOS POR E/S"); // NOI18N
         barraProgresoCPUB.setStringPainted(true);
 
         barraProgresoESB.setBackground(new java.awt.Color(0, 153, 153));
-        barraProgresoESB.setString("LIMITADOS POR E/S");
+        barraProgresoESB.setString("LIMITADOS POR CPU");
         barraProgresoESB.setStringPainted(true);
 
         colaESB.setModel(new javax.swing.table.DefaultTableModel(
@@ -1184,7 +1210,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
 
         jLabel22.setText("Cantidad de procesos");
 
-        barraProgresoSOB.setBackground(new java.awt.Color(0, 0, 102));
+        barraProgresoSOB.setBackground(new java.awt.Color(0, 153, 153));
         barraProgresoSOB.setString("SO");
         barraProgresoSOB.setStringPainted(true);
 
@@ -1596,10 +1622,6 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             if(!seBloqueo){
                 JOptionPane.showMessageDialog(null, "La ID ingresada no concuerda con ningun proceso habilitado");
             }
-        }else if(colaSOA.getSelectedRow() != -1){
-            instancePlanificador.suspenderProceso(Integer.parseInt(colaSOA.getValueAt(colaSOA.getSelectedRow(), 0).toString()));
-        }else if(colaSOB.getSelectedRow() != -1){
-            instancePlanificador.suspenderProceso(Integer.parseInt(colaSOB.getValueAt(colaSOB.getSelectedRow(), 0).toString()));
         }else if(colaNuevosA.getSelectedRow() != -1){
             instancePlanificador.suspenderProceso(Integer.parseInt(colaNuevosA.getValueAt(colaNuevosA.getSelectedRow(), 0).toString()));
         }else if(colaNuevosB.getSelectedRow() != -1){
@@ -1614,6 +1636,9 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             instancePlanificador.suspenderProceso(Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString()));
         }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
             instancePlanificador.suspenderProceso(Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString()));
+        }else{
+            JOptionPane.showMessageDialog(null, "El proceso seleccionado no puede ser suspendido");
+            return;
         }
         if(seBloqueo){
             actualiazarDatosCriticos(true);
@@ -1797,11 +1822,6 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }
             actualiazarDatosCriticos(true);
             return;
-        }else if(colaSOA.getSelectedRow() != -1){
-            id = Integer.parseInt(colaSOA.getValueAt(colaSOA.getSelectedRow(), 0).toString());
-            instancePlanificador.eliminarProceso(id);
-        }else if(colaSOB.getSelectedRow() != -1){
-            id = Integer.parseInt(colaSOB.getValueAt(colaSOB.getSelectedRow(), 0).toString());
         }else if(colaNuevosA.getSelectedRow() != -1){
             id = Integer.parseInt(colaNuevosA.getValueAt(colaNuevosA.getSelectedRow(), 0).toString());
         }else if(colaNuevosB.getSelectedRow() != -1){
@@ -1816,9 +1836,12 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             id = Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString());
         }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
             id = Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString());
-        }else{
+        }else if(tablaProcesosSuspendidosInicial.getSelectedRow() != -1){
             id = Integer.parseInt(tablaProcesosSuspendidosInicial.getValueAt(tablaProcesosSuspendidosInicial.getSelectedRow(), 0).toString());
-        }   
+        }else{
+            JOptionPane.showMessageDialog(null, "El proceso seleccionado no puede ser eliminado");
+            return;
+        }
         instancePlanificador.eliminarProceso(id);
         actualiazarDatosCriticos(true);    
         idDelProcesosAInteractuar.setText("");
@@ -1838,9 +1861,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
-        
-        
+    public static void main(String args[]) { 
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {

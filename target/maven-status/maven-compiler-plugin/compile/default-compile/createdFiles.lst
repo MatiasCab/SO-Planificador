@@ -9,6 +9,7 @@ com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$32.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$19.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$35.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$29.class
+com\mycompany\sistemas_operativos_obligatorio\Ventana_Final$2.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$25.class
 com\mycompany\sistemas_operativos_obligatorio\CreadorProcesos$1.class
 com\mycompany\sistemas_operativos_obligatorio\Creador_CPUs$1.class
@@ -18,6 +19,7 @@ com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$8.class
 ArbolProceso\Nodo.class
 com\mycompany\sistemas_operativos_obligatorio\CreadorProcesos$7.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$42.class
+com\mycompany\sistemas_operativos_obligatorio\Ventana_Final$1.class
 Planificador\Planificador.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$18.class
 com\mycompany\sistemas_operativos_obligatorio\CreadorProcesos$3.class
@@ -52,6 +54,7 @@ com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$2.class
 ArbolProceso\IElementoAB.class
 com\mycompany\sistemas_operativos_obligatorio\SISTEMAS_OPERATIVOS_OBLIGATORIO.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$24.class
+com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$44.class
 Procesos\Proceso.class
 com\mycompany\sistemas_operativos_obligatorio\CreadorProcesos$11.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$14.class
@@ -67,8 +70,10 @@ com\mycompany\sistemas_operativos_obligatorio\CreadorProcesos$5.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$3.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$41.class
 com\mycompany\sistemas_operativos_obligatorio\CreadorProcesos$10.class
+com\mycompany\sistemas_operativos_obligatorio\Ventana_Final$3.class
 ArbolProceso\TElementoAB.class
 ArbolProceso\IArbolAVL.class
+com\mycompany\sistemas_operativos_obligatorio\Ventana_Final.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$13.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$9.class
 com\mycompany\sistemas_operativos_obligatorio\VistaPlanificador$28.class
