@@ -51,7 +51,7 @@ public class Planificador { //Esta clase tiene que ser singleton
         colaDeEjecucion = colaProcesos1;
                 
         colaProcesos2[0] = new ListaProcesos();
-        colaProcesos2[2] = new ListaProcesos();
+        colaProcesos2[1] = new ListaProcesos();
         colaProcesos2[3] = new ListaProcesos();
         
         colaDeExpirados = colaProcesos2;
@@ -86,16 +86,10 @@ public class Planificador { //Esta clase tiene que ser singleton
             this.colaDeEjecucion[3].insertar(proceso.getPrioridad(), proceso);
             return true;
         }
-        proceso = this.colaDeExpirados[0].eliminar(idProceso);
+        proceso = this.colaDeExpirados[1].eliminar(idProceso);
         if(proceso != null){
             proceso.cambiarPrioridad(prioridad);
-            this.colaDeExpirados[0].insertar(proceso.getPrioridad(), proceso);
-            return true;
-        }
-        proceso = this.colaDeExpirados[2].eliminar(idProceso);
-        if(proceso != null){
-            proceso.cambiarPrioridad(prioridad);
-            this.colaDeExpirados[2].insertar(proceso.getPrioridad(), proceso);
+            this.colaDeExpirados[1].insertar(proceso.getPrioridad(), proceso);
             return true;
         }
         proceso = this.colaDeExpirados[3].eliminar(idProceso);
@@ -141,9 +135,9 @@ public class Planificador { //Esta clase tiene que ser singleton
             this.suspendidos.put(proceso, "EJE3");
             return true;
         }
-        proceso = this.colaDeExpirados[2].eliminar(idProceso);
+        proceso = this.colaDeExpirados[1].eliminar(idProceso);
         if(proceso != null){
-            this.suspendidos.put(proceso, "EXP2");
+            this.suspendidos.put(proceso, "EXP1");
             return true;
         }
         proceso = this.colaDeExpirados[3].eliminar(idProceso);
@@ -177,7 +171,7 @@ public class Planificador { //Esta clase tiene que ser singleton
         if(proceso != null){
             return true;
         }
-        proceso = this.colaDeExpirados[2].eliminar(idProceso);
+        proceso = this.colaDeExpirados[1].eliminar(idProceso);
         if(proceso != null){
             return true;
         }
@@ -217,7 +211,7 @@ public class Planificador { //Esta clase tiene que ser singleton
                     }
                 }else if(cola.contains("EXP")){
                     switch (cola.charAt(3)) {
-                        case '2' -> this.colaDeExpirados[2].insertar(p.getPrioridad(), p);
+                        case '1' -> this.colaDeExpirados[1].insertar(p.getPrioridad(), p);
                         default -> this.colaDeEjecucion[3].insertar(p.getPrioridad(), p);
                     }
                 }else{
@@ -239,7 +233,7 @@ public class Planificador { //Esta clase tiene que ser singleton
             if(p.isOfSO()){
                 colaDeEjecucion[0].insertar(p.getPrioridad(), p);
             }else{
-                colaDeEjecucion[1].insertar(p.getPrioridad(), p);
+                colaDeEjecucion[2].insertar(p.getPrioridad(), p);
             }
         }
         estaOcupado = false;
@@ -312,16 +306,16 @@ public class Planificador { //Esta clase tiene que ser singleton
                 return this.colaDeEjecucion[3].eliminarUltimo();
             }else{
                 this.cambioContextoColas = !this.cambioContextoColas;
-                if(this.colaProcesos2[1] == null){
-                    this.colaProcesos2[1] = this.colaProcesos1[1];
+                if(this.colaProcesos2[2] == null){
+                    this.colaProcesos2[2] = this.colaProcesos1[2];
                     this.colaDeEjecucion = this.colaProcesos2;
                     this.colaDeExpirados = this.colaProcesos1;
-                    this.colaProcesos1[1] = null;
+                    this.colaProcesos1[2] = null;
                 }else{
-                    this.colaProcesos1[1] = this.colaProcesos2[1];
+                    this.colaProcesos1[2] = this.colaProcesos2[2];
                     this.colaDeEjecucion = this.colaProcesos1;
                     this.colaDeExpirados = this.colaProcesos2;
-                    this.colaProcesos2[1] = null;
+                    this.colaProcesos2[2] = null;
                 }
             }
         }
@@ -339,8 +333,8 @@ public class Planificador { //Esta clase tiene que ser singleton
             return this.colaDeEjecucion[3].getUltimo();
         }else if(!this.colaDeExpirados[0].esVacia()){
             return this.colaDeExpirados[0].getUltimo();
-        }else if(!this.colaDeExpirados[2].esVacia()){
-            return this.colaDeExpirados[2].getUltimo();
+        }else if(!this.colaDeExpirados[1].esVacia()){
+            return this.colaDeExpirados[1].getUltimo();
         }else{
             return this.colaDeExpirados[3].getUltimo();
         }
@@ -358,7 +352,7 @@ public class Planificador { //Esta clase tiene que ser singleton
                     if(p.isLimitedForCPU()){
                         this.colaDeExpirados[3].insertar(p.getPrioridad(), p);
                     }else{
-                        this.colaDeExpirados[2].insertar(p.getPrioridad(), p);
+                        this.colaDeExpirados[1].insertar(p.getPrioridad(), p);
                     }
                 }
             }else{
@@ -378,15 +372,15 @@ public class Planificador { //Esta clase tiene que ser singleton
     }
     
     public ArrayList<Proceso> getColaDejecucionNuevos(){
-        return this.colaDeEjecucion[1].toArray();
-    }
-    
-    public ArrayList<Proceso> getColaDejecucionLimitadosCPU(){
         return this.colaDeEjecucion[2].toArray();
     }
     
-    public ArrayList<Proceso> getColaDejecucionLimitadosES(){
+    public ArrayList<Proceso> getColaDejecucionLimitadosCPU(){
         return this.colaDeEjecucion[3].toArray();
+    }
+    
+    public ArrayList<Proceso> getColaDejecucionLimitadosES(){
+        return this.colaDeEjecucion[1].toArray();
     }
     
     public ArrayList<Proceso> getColaDeExpiradosSO(){
@@ -394,11 +388,11 @@ public class Planificador { //Esta clase tiene que ser singleton
     }
     
     public ArrayList<Proceso> getColaDeExpiradosLimitadosCPU(){
-        return this.colaDeExpirados[2].toArray();
+        return this.colaDeExpirados[3].toArray();
     }
     
     public ArrayList<Proceso> getColaDeExpiradosLimitadosES(){
-        return this.colaDeExpirados[3].toArray();
+        return this.colaDeExpirados[1].toArray();
     }
     
     public ArrayList<Proceso> getBloqueadosPorES(){
@@ -462,7 +456,7 @@ public class Planificador { //Esta clase tiene que ser singleton
         cantProcesos += this.colaDeEjecucion[3].size();
         
         cantProcesos += this.colaDeExpirados[0].size();
-        cantProcesos += this.colaDeExpirados[2].size();
+        cantProcesos += this.colaDeExpirados[1].size();
         cantProcesos += this.colaDeExpirados[3].size();
         
         return cantProcesos;

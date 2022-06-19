@@ -61,7 +61,7 @@ public class CPU {
                     }else if (this.enEjecucion.isLimitedForCPU()) {
                         colaDeExpirados[3].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
                     }else{
-                        colaDeExpirados[2].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
+                        colaDeExpirados[1].insertar(this.enEjecucion.getPrioridad(), this.enEjecucion);
                     }
                     this.enEjecucion = null;
                     this.tiempoEjecucionActual = tiempoDeEjecucion;

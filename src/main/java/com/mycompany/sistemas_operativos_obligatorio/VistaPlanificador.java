@@ -102,12 +102,12 @@ public final class VistaPlanificador extends javax.swing.JFrame {
     
         listaTablasModels.add(tablaProcesosSOA);
         listaTablasModels.add(tablaProcesosSOB);
+        listaTablasModels.add(tablaProcesosESA);
+        listaTablasModels.add(tablaProcesosESB);
         listaTablasModels.add(tablaProcesosNuevosA);
         listaTablasModels.add(tablaProcesosNuevosB);
         listaTablasModels.add(tablaProcesosCPUA);
         listaTablasModels.add(tablaProcesosCPUB);
-        listaTablasModels.add(tablaProcesosESA);
-        listaTablasModels.add(tablaProcesosESB);
         
         for (DefaultTableModel t : listaTablasModels){
             t.addColumn("ID");
@@ -120,12 +120,12 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         
         colaSOA.setModel(listaTablasModels.get(0));
         colaSOB.setModel(listaTablasModels.get(1));
-        colaNuevosA.setModel(listaTablasModels.get(2));
-        colaNuevosB.setModel(listaTablasModels.get(3));
-        colaCPUA.setModel(listaTablasModels.get(4));
-        colaCPUB.setModel(listaTablasModels.get(5));
-        colaESA.setModel(listaTablasModels.get(6));
-        colaESB.setModel(listaTablasModels.get(7));
+        colaESA.setModel(listaTablasModels.get(2));
+        colaESB.setModel(listaTablasModels.get(3));
+        colaNuevosA.setModel(listaTablasModels.get(4));
+        colaNuevosB.setModel(listaTablasModels.get(5));
+        colaCPUA.setModel(listaTablasModels.get(6));
+        colaCPUB.setModel(listaTablasModels.get(7));
         
         tablaProcesosEjecucion = new DefaultTableModel();
         
@@ -200,8 +200,8 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 inicializarBarrasColas("B");
             } 
         }else{
-            reajustarBarrasColas(listaProcesos.size());
             actualizarTablasColas();
+            reajustarBarrasColas(listaProcesos.size());
             obtenerProximoProceso();
             actualizarVentanasDatos();
             actualizarBarrasDatos();
@@ -407,16 +407,6 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 tabla.addRow(datos);
                 tablaInicial.getColumnModel().getColumn(4).setCellRenderer(new RenderEjecucion());
             }  
-            /*
-            DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer();
-            if(expirada & (tabla.getRowCount() - filas > 0)){
-                cellRenderer.setBackground(new Color(0, 153, 0));
-            }else{
-                cellRenderer.setBackground(new Color(204, 255, 255));
-            }
-            for(int i=0;i<tablaInicial.getColumnCount();i++){
-                tablaInicial.getTableHeader().getColumnModel().getColumn(i).setHeaderRenderer(cellRenderer);   
-            }*/
         }
         
     }
@@ -476,7 +466,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             
             procesosSONuevos = cantidadNuevos - procesosSONuevos;
             barraProgresoNuevosB.setMaximum(barraProgresoNuevosB.getMaximum() + procesosSONuevos);
-            barraProgresoNuevosB.setValue(tablaProcesosNuevosB.getRowCount() + procesosSONuevos);
+            barraProgresoNuevosB.setValue(colaNuevosB.getRowCount());
         }else{
             procesosSONuevos = instancePlanificador.getCantProcesosSO() - barraProgresoSOA.getMaximum();
             barraProgresoSOA.setMaximum(barraProgresoSOA.getMaximum() + procesosSONuevos);
@@ -484,7 +474,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             
             procesosSONuevos = cantidadNuevos - procesosSONuevos;
             barraProgresoNuevosA.setMaximum(barraProgresoNuevosA.getMaximum() + procesosSONuevos);
-            barraProgresoNuevosA.setValue(tablaProcesosSOB.getRowCount() + procesosSONuevos);
+            barraProgresoNuevosA.setValue(colaNuevosA.getRowCount());
         }
     }
     
@@ -569,18 +559,18 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             colaSOA.clearSelection();
         }if(!colaSOB.equals(tablaHabilitada)){
             colaSOB.clearSelection();
-        }if(!colaNuevosA.equals(tablaHabilitada)){
-            colaNuevosA.clearSelection();
+        }if(!colaESA.equals(tablaHabilitada)){
+            colaESA.clearSelection();
         }if(!colaSOB.equals(tablaHabilitada)){
             colaSOB.clearSelection();
+        }if(!colaNuevosB.equals(tablaHabilitada)){
+            colaNuevosB.clearSelection();
+        }if(!colaNuevosA.equals(tablaHabilitada)){
+            colaNuevosA.clearSelection();
         }if(!colaCPUB.equals(tablaHabilitada)){
             colaCPUB.clearSelection();
         }if(!colaCPUA.equals(tablaHabilitada)){
             colaCPUA.clearSelection();
-        }if(!colaESB.equals(tablaHabilitada)){
-            colaESB.clearSelection();
-        }if(!colaESA.equals(tablaHabilitada)){
-            colaESA.clearSelection();
         }if(!tablaProcesosBloqueadosInicial.equals(tablaHabilitada)){
             tablaProcesosBloqueadosInicial.clearSelection();
         }if(!tablaProcesosSuspendidosInicial.equals(tablaHabilitada)){
@@ -598,17 +588,17 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             pasa = false;
         }else if(colaSOB.getSelectedRow() != -1){
             pasa = false;
+        }else if(colaESA.getSelectedRow() != -1){
+            pasa = false;
+        }else if(colaESB.getSelectedRow() != -1){
+            pasa = false;
         }else if(colaNuevosA.getSelectedRow() != -1){
             pasa = false;
         }else if(colaNuevosB.getSelectedRow() != -1){
             pasa = false;
-        }else if(colaCPUA.getSelectedRow() != -1){
-            pasa = false;
         }else if(colaCPUB.getSelectedRow() != -1){
             pasa = false;
-        }else if(colaESB.getSelectedRow() != -1){
-            pasa = false;
-        }else if(colaESA.getSelectedRow() != -1){
+        }else if(colaCPUA.getSelectedRow() != -1){
             pasa = false;
         }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
             pasa = false;
@@ -666,13 +656,13 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         poximoProcesoID = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
         poximoProcesoParaProximaES = new javax.swing.JTextField();
+        barraProgresoESA = new javax.swing.JProgressBar();
         barraProgresoNuevosA = new javax.swing.JProgressBar();
         barraProgresoCPUA = new javax.swing.JProgressBar();
-        barraProgresoESA = new javax.swing.JProgressBar();
         barraProgresoSOA = new javax.swing.JProgressBar();
         colaCPU1 = new javax.swing.JTextField();
         jScrollPane2 = new javax.swing.JScrollPane();
-        colaESA = new javax.swing.JTable(){
+        colaCPUA = new javax.swing.JTable(){
             @Override
             public boolean isCellEditable(int rows, int columns){
                 return false;
@@ -686,14 +676,14 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }
         };
         jScrollPane4 = new javax.swing.JScrollPane();
-        colaNuevosA = new javax.swing.JTable(){
+        colaESA = new javax.swing.JTable(){
             @Override
             public boolean isCellEditable(int rows, int columns){
                 return false;
             }
         };
         jScrollPane5 = new javax.swing.JScrollPane();
-        colaCPUA = new javax.swing.JTable(){
+        colaNuevosA = new javax.swing.JTable(){
             @Override
             public boolean isCellEditable(int rows, int columns){
                 return false;
@@ -716,18 +706,18 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }
         };
         colaCPU2 = new javax.swing.JTextField();
+        barraProgresoESB = new javax.swing.JProgressBar();
         barraProgresoNuevosB = new javax.swing.JProgressBar();
         barraProgresoCPUB = new javax.swing.JProgressBar();
-        barraProgresoESB = new javax.swing.JProgressBar();
         jScrollPane10 = new javax.swing.JScrollPane();
-        colaESB = new javax.swing.JTable(){
+        colaCPUB = new javax.swing.JTable(){
             @Override
             public boolean isCellEditable(int rows, int columns){
                 return false;
             }
         };
         jScrollPane13 = new javax.swing.JScrollPane();
-        colaCPUB = new javax.swing.JTable(){
+        colaNuevosB = new javax.swing.JTable(){
             @Override
             public boolean isCellEditable(int rows, int columns){
                 return false;
@@ -775,7 +765,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         etiquetaPorcentajeProcesosBloqueados = new javax.swing.JLabel();
         idDelProcesosAInteractuar = new javax.swing.JTextField();
         jScrollPane16 = new javax.swing.JScrollPane();
-        colaNuevosB = new javax.swing.JTable(){
+        colaESB = new javax.swing.JTable(){
             @Override
             public boolean isCellEditable(int rows, int columns){
                 return false;
@@ -848,17 +838,17 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }
         });
 
-        barraProgresoNuevosA.setBackground(new java.awt.Color(0, 0, 102));
+        barraProgresoESA.setBackground(new java.awt.Color(0, 0, 102));
+        barraProgresoESA.setString("LIMITADOS POR E/S");
+        barraProgresoESA.setStringPainted(true);
+
+        barraProgresoNuevosA.setBackground(new java.awt.Color(255, 0, 0));
         barraProgresoNuevosA.setString("NUEVOS");
         barraProgresoNuevosA.setStringPainted(true);
 
-        barraProgresoCPUA.setBackground(new java.awt.Color(255, 0, 0));
-        barraProgresoCPUA.setString("LIMITADOS POR E/S");
+        barraProgresoCPUA.setBackground(new java.awt.Color(0, 153, 153));
+        barraProgresoCPUA.setString("LIMITADOS POR CPU");
         barraProgresoCPUA.setStringPainted(true);
-
-        barraProgresoESA.setBackground(new java.awt.Color(0, 153, 153));
-        barraProgresoESA.setString("LIMITADOS POR CPU");
-        barraProgresoESA.setStringPainted(true);
 
         barraProgresoSOA.setBackground(Color.BLACK);
         barraProgresoSOA.setString("SO");
@@ -871,7 +861,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }
         });
 
-        colaESA.setModel(new javax.swing.table.DefaultTableModel(
+        colaCPUA.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
                 {null, null, null, null},
@@ -890,14 +880,14 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        colaESA.setFocusable(false);
-        colaESA.getTableHeader().setReorderingAllowed(false);
-        colaESA.addMouseListener(new java.awt.event.MouseAdapter() {
+        colaCPUA.setFocusable(false);
+        colaCPUA.getTableHeader().setReorderingAllowed(false);
+        colaCPUA.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                colaESAMouseClicked(evt);
+                colaCPUAMouseClicked(evt);
             }
         });
-        jScrollPane2.setViewportView(colaESA);
+        jScrollPane2.setViewportView(colaCPUA);
 
         colaSOA.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -927,6 +917,34 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         });
         jScrollPane3.setViewportView(colaSOA);
 
+        colaESA.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        colaESA.setFocusable(false);
+        colaESA.getTableHeader().setReorderingAllowed(false);
+        colaESA.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaESAMouseClicked(evt);
+            }
+        });
+        jScrollPane4.setViewportView(colaESA);
+
         colaNuevosA.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
@@ -953,35 +971,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 colaNuevosAMouseClicked(evt);
             }
         });
-        jScrollPane4.setViewportView(colaNuevosA);
-
-        colaCPUA.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
-            }
-        ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false
-            };
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        colaCPUA.setFocusable(false);
-        colaCPUA.getTableHeader().setReorderingAllowed(false);
-        colaCPUA.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                colaCPUAMouseClicked(evt);
-            }
-        });
-        jScrollPane5.setViewportView(colaCPUA);
+        jScrollPane5.setViewportView(colaNuevosA);
 
         jLabel5.setText("Procesos bloqueados:");
 
@@ -1034,45 +1024,17 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }
         });
 
-        barraProgresoNuevosB.setBackground(new java.awt.Color(0, 0, 102));
-        barraProgresoNuevosB.setString("NUEVOS");
-        barraProgresoNuevosB.setStringPainted(true);
-
-        barraProgresoCPUB.setBackground(new java.awt.Color(255, 0, 0));
-        barraProgresoCPUB.setString("LIMITADOS POR E/S"); // NOI18N
-        barraProgresoCPUB.setStringPainted(true);
-
-        barraProgresoESB.setBackground(new java.awt.Color(0, 153, 153));
-        barraProgresoESB.setString("LIMITADOS POR CPU");
+        barraProgresoESB.setBackground(new java.awt.Color(0, 0, 102));
+        barraProgresoESB.setString("LIMITADOS POR E/S");
         barraProgresoESB.setStringPainted(true);
 
-        colaESB.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
-            }
-        ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false
-            };
+        barraProgresoNuevosB.setBackground(new java.awt.Color(255, 0, 0));
+        barraProgresoNuevosB.setString("NUEVOS"); // NOI18N
+        barraProgresoNuevosB.setStringPainted(true);
 
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        colaESB.setFocusable(false);
-        colaESB.getTableHeader().setReorderingAllowed(false);
-        colaESB.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                colaESBMouseClicked(evt);
-            }
-        });
-        jScrollPane10.setViewportView(colaESB);
+        barraProgresoCPUB.setBackground(new java.awt.Color(0, 153, 153));
+        barraProgresoCPUB.setString("LIMITADOS POR CPU");
+        barraProgresoCPUB.setStringPainted(true);
 
         colaCPUB.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -1100,7 +1062,35 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 colaCPUBMouseClicked(evt);
             }
         });
-        jScrollPane13.setViewportView(colaCPUB);
+        jScrollPane10.setViewportView(colaCPUB);
+
+        colaNuevosB.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        colaNuevosB.setFocusable(false);
+        colaNuevosB.getTableHeader().setReorderingAllowed(false);
+        colaNuevosB.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                colaNuevosBMouseClicked(evt);
+            }
+        });
+        jScrollPane13.setViewportView(colaNuevosB);
 
         colaSOB.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -1239,7 +1229,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }
         });
 
-        colaNuevosB.setModel(new javax.swing.table.DefaultTableModel(
+        colaESB.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
                 {null, null, null, null},
@@ -1258,14 +1248,14 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        colaNuevosB.setFocusable(false);
-        colaNuevosB.getTableHeader().setReorderingAllowed(false);
-        colaNuevosB.addMouseListener(new java.awt.event.MouseAdapter() {
+        colaESB.setFocusable(false);
+        colaESB.getTableHeader().setReorderingAllowed(false);
+        colaESB.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                colaNuevosBMouseClicked(evt);
+                colaESBMouseClicked(evt);
             }
         });
-        jScrollPane16.setViewportView(colaNuevosB);
+        jScrollPane16.setViewportView(colaESB);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -1366,9 +1356,9 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                                                     .addComponent(botonPausar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))))
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(barraProgresoNuevosA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(barraProgresoESA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(barraProgresoCPUA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(barraProgresoNuevosA, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                         .addComponent(colaCPU1, javax.swing.GroupLayout.Alignment.TRAILING)
                                         .addComponent(barraProgresoSOA, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -1380,12 +1370,12 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                                     .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addGap(18, 18, 18)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(barraProgresoNuevosB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(barraProgresoESB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(colaCPU2, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(barraProgresoSOB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                        .addComponent(barraProgresoESB, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(barraProgresoCPUB, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                        .addComponent(barraProgresoCPUB, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(barraProgresoNuevosB, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                                 .addGap(20, 20, 20)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jScrollPane14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1541,15 +1531,15 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                                     .addComponent(barraProgresoSOA, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(barraProgresoNuevosA, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(barraProgresoESA, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(barraProgresoCPUA, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(barraProgresoNuevosA, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jScrollPane5, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(barraProgresoESA, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(barraProgresoCPUA, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(colaCPU2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1560,14 +1550,14 @@ public final class VistaPlanificador extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jScrollPane16, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(barraProgresoNuevosB, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(barraProgresoESB, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(barraProgresoCPUB, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(barraProgresoNuevosB, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jScrollPane13, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(barraProgresoESB, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(barraProgresoCPUB, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jScrollPane10, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
@@ -1622,18 +1612,18 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             if(!seBloqueo){
                 JOptionPane.showMessageDialog(null, "La ID ingresada no concuerda con ningun proceso habilitado");
             }
+        }else if(colaESA.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString()));
+        }else if(colaESB.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString()));
         }else if(colaNuevosA.getSelectedRow() != -1){
             instancePlanificador.suspenderProceso(Integer.parseInt(colaNuevosA.getValueAt(colaNuevosA.getSelectedRow(), 0).toString()));
         }else if(colaNuevosB.getSelectedRow() != -1){
             instancePlanificador.suspenderProceso(Integer.parseInt(colaNuevosB.getValueAt(colaNuevosB.getSelectedRow(), 0).toString()));
-        }else if(colaCPUA.getSelectedRow() != -1){
-            instancePlanificador.suspenderProceso(Integer.parseInt(colaCPUA.getValueAt(colaCPUA.getSelectedRow(), 0).toString()));
         }else if(colaCPUB.getSelectedRow() != -1){
             instancePlanificador.suspenderProceso(Integer.parseInt(colaCPUB.getValueAt(colaCPUB.getSelectedRow(), 0).toString()));
-        }else if(colaESB.getSelectedRow() != -1){
-            instancePlanificador.suspenderProceso(Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString()));
-        }else if(colaESA.getSelectedRow() != -1){
-            instancePlanificador.suspenderProceso(Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString()));
+        }else if(colaCPUA.getSelectedRow() != -1){
+            instancePlanificador.suspenderProceso(Integer.parseInt(colaCPUA.getValueAt(colaCPUA.getSelectedRow(), 0).toString()));
         }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
             instancePlanificador.suspenderProceso(Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString()));
         }else{
@@ -1690,6 +1680,13 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_idDelProcesosAInteractuarKeyReleased
 
+    private void colaESAMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaESAMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaESA);
+    }//GEN-LAST:event_colaESAMouseClicked
+
     private void colaNuevosAMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaNuevosAMouseClicked
         // TODO add your handling code here:
         habilitarBotones();
@@ -1704,13 +1701,6 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         limpiarSeleccionTablas(colaCPUA);
     }//GEN-LAST:event_colaCPUAMouseClicked
 
-    private void colaESAMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaESAMouseClicked
-        // TODO add your handling code here:
-        habilitarBotones();
-        idDelProcesosAInteractuar.setText("");
-        limpiarSeleccionTablas(colaESA);
-    }//GEN-LAST:event_colaESAMouseClicked
-
     private void colaSOBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaSOBMouseClicked
         // TODO add your handling code here:
         habilitarBotones();
@@ -1718,19 +1708,19 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         limpiarSeleccionTablas(colaSOB);
     }//GEN-LAST:event_colaSOBMouseClicked
 
+    private void colaNuevosBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaNuevosBMouseClicked
+        // TODO add your handling code here:
+        habilitarBotones();
+        idDelProcesosAInteractuar.setText("");
+        limpiarSeleccionTablas(colaNuevosB);
+    }//GEN-LAST:event_colaNuevosBMouseClicked
+
     private void colaCPUBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaCPUBMouseClicked
         // TODO add your handling code here:
         habilitarBotones();
         idDelProcesosAInteractuar.setText("");
         limpiarSeleccionTablas(colaCPUB);
     }//GEN-LAST:event_colaCPUBMouseClicked
-
-    private void colaESBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaESBMouseClicked
-        // TODO add your handling code here:
-        habilitarBotones();
-        idDelProcesosAInteractuar.setText("");
-        limpiarSeleccionTablas(colaESB);
-    }//GEN-LAST:event_colaESBMouseClicked
 
     private void tablaProcesosBloqueadosInicialMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tablaProcesosBloqueadosInicialMouseClicked
         // TODO add your handling code here:
@@ -1748,12 +1738,12 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         limpiarSeleccionTablas(tablaProcesosSuspendidosInicial);
     }//GEN-LAST:event_tablaProcesosSuspendidosInicialMouseClicked
 
-    private void colaNuevosBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaNuevosBMouseClicked
+    private void colaESBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_colaESBMouseClicked
         // TODO add your handling code here:
         habilitarBotones();
         idDelProcesosAInteractuar.setText("");
-        limpiarSeleccionTablas(colaNuevosB);
-    }//GEN-LAST:event_colaNuevosBMouseClicked
+        limpiarSeleccionTablas(colaESB);
+    }//GEN-LAST:event_colaESBMouseClicked
 
     private void botonDesuspenderProcesoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonDesuspenderProcesoActionPerformed
         // TODO add your handling code here:
@@ -1788,18 +1778,18 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             id = Integer.parseInt(colaSOA.getValueAt(colaSOA.getSelectedRow(), 0).toString());
         }else if(colaSOB.getSelectedRow() != -1){
             id = Integer.parseInt(colaSOB.getValueAt(colaSOB.getSelectedRow(), 0).toString());
-        }else if(colaNuevosA.getSelectedRow() != -1){
-            id = Integer.parseInt(colaNuevosA.getValueAt(colaNuevosA.getSelectedRow(), 0).toString());
-        }else if(colaNuevosB.getSelectedRow() != -1){
-            id = Integer.parseInt(colaNuevosB.getValueAt(colaNuevosB.getSelectedRow(), 0).toString());
-        }else if(colaCPUA.getSelectedRow() != -1){
-            id = Integer.parseInt(colaCPUA.getValueAt(colaCPUB.getSelectedRow(), 0).toString());
-        }else if(colaCPUB.getSelectedRow() != -1){
-            id = Integer.parseInt(colaCPUB.getValueAt(colaCPUA.getSelectedRow(), 0).toString());
-        }else if(colaESB.getSelectedRow() != -1){
-            id = Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString());
         }else if(colaESA.getSelectedRow() != -1){
             id = Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString());
+        }else if(colaESB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString());
+        }else if(colaNuevosA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaNuevosA.getValueAt(colaNuevosB.getSelectedRow(), 0).toString());
+        }else if(colaNuevosB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaNuevosB.getValueAt(colaNuevosA.getSelectedRow(), 0).toString());
+        }else if(colaCPUB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaCPUB.getValueAt(colaCPUB.getSelectedRow(), 0).toString());
+        }else if(colaCPUA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaCPUA.getValueAt(colaCPUA.getSelectedRow(), 0).toString());
         }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
             id = Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString());
         }else{
@@ -1822,18 +1812,18 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }
             actualiazarDatosCriticos(true);
             return;
-        }else if(colaNuevosA.getSelectedRow() != -1){
-            id = Integer.parseInt(colaNuevosA.getValueAt(colaNuevosA.getSelectedRow(), 0).toString());
-        }else if(colaNuevosB.getSelectedRow() != -1){
-            id = Integer.parseInt(colaNuevosB.getValueAt(colaNuevosB.getSelectedRow(), 0).toString());
-        }else if(colaCPUA.getSelectedRow() != -1){
-            id = Integer.parseInt(colaCPUA.getValueAt(colaCPUB.getSelectedRow(), 0).toString());
-        }else if(colaCPUB.getSelectedRow() != -1){
-            id = Integer.parseInt(colaCPUB.getValueAt(colaCPUA.getSelectedRow(), 0).toString());
-        }else if(colaESB.getSelectedRow() != -1){
-            id = Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString());
         }else if(colaESA.getSelectedRow() != -1){
             id = Integer.parseInt(colaESA.getValueAt(colaESA.getSelectedRow(), 0).toString());
+        }else if(colaESB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaESB.getValueAt(colaESB.getSelectedRow(), 0).toString());
+        }else if(colaNuevosA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaNuevosA.getValueAt(colaNuevosB.getSelectedRow(), 0).toString());
+        }else if(colaNuevosB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaNuevosB.getValueAt(colaNuevosA.getSelectedRow(), 0).toString());
+        }else if(colaCPUB.getSelectedRow() != -1){
+            id = Integer.parseInt(colaCPUB.getValueAt(colaCPUB.getSelectedRow(), 0).toString());
+        }else if(colaCPUA.getSelectedRow() != -1){
+            id = Integer.parseInt(colaCPUA.getValueAt(colaCPUA.getSelectedRow(), 0).toString());
         }else if(tablaProcesosBloqueadosInicial.getSelectedRow() != -1){
             id = Integer.parseInt(tablaProcesosBloqueadosInicial.getValueAt(tablaProcesosBloqueadosInicial.getSelectedRow(), 0).toString());
         }else if(tablaProcesosSuspendidosInicial.getSelectedRow() != -1){
