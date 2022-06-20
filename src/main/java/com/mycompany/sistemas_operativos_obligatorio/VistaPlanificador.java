@@ -88,7 +88,7 @@ public final class VistaPlanificador extends javax.swing.JFrame {
         
         this.tiempoSegs = tiempoSegs;
         
-        this.getContentPane().setBackground(new Color(51,255,255));
+        this.getContentPane().setBackground(new Color(153,153,153));
         ArrayList<DefaultTableModel> listaTablasModels = new ArrayList<>();
         
         tablaProcesosSOA = new DefaultTableModel();
@@ -453,6 +453,11 @@ public final class VistaPlanificador extends javax.swing.JFrame {
             }else{
                 barras[i].setMaximum(cantidadEnCola);
                 barras[i].setValue(barras[i].getMaximum()); 
+            }
+            if( com == 1){
+                barras[i - 1].setMaximum(0);
+            }else{
+                barras[i + 1].setMaximum(0);
             }
         }
     }
