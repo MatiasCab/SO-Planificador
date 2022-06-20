@@ -18,6 +18,7 @@ public class CreadorProcesos extends javax.swing.JFrame {
     
     DefaultTableModel tablaProcesos;
     VistaPlanificador ventanaPrincipal;
+    int cantProcesosAuto = 0;
 
     /**
      * Creates new form CreadorProcesos
@@ -452,40 +453,27 @@ public class CreadorProcesos extends javax.swing.JFrame {
 
     private void botonGenerarProcesosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonGenerarProcesosActionPerformed
         // TODO add your handling code here:
-        for (int i = 0; i < 9; i++){
+        
+        int cantidadProcesos = (int) spinnerCargarProcesos.getValue();
+        for (int i = 0; i < cantidadProcesos; i++){
             Object[] datos = new Object[6];
-            datos[0] = "p"+i;
-            datos[1] = "USER";
-            datos[2] = i;
-            datos[3] = i+40;
-            datos[4] = 0;
-            datos[5] = 0;
+            datos[0] = "p-A-"+cantProcesosAuto;
+            if(cantProcesosAuto% 10 == 0){
+                if(cantProcesosAuto % 40 == 0){
+                    datos[1] = "SO-N.A.";
+                }else{
+                    datos[1] = "SO-A.";
+                }
+            }else{
+                datos[1] = "USER";
+            }
+            datos[2] = (int)(Math.random() * ((99 - 1) + 1)) + 1;
+            datos[3] = (int)(Math.random() * ((200 - 1) + 1)) + 1;
+            datos[4] = (int)(Math.random() * ((50 - 0) + 1)) + 0;
+            datos[5] = ( ((int) datos[4]) == 0 ? 0 : (int)(Math.random() * ((200 - 1) + 1)) + 1);
         
             tablaProcesos.addRow(datos);
-        }
-        
-        for (int i = 0; i < 10; i++){
-            Object[] datos = new Object[6];
-            datos[0] = "p"+i;
-            datos[1] = "SO";
-            datos[2] = i;
-            datos[3] = i+40;
-            datos[4] = 0;
-            datos[5] = 0;
-        
-            tablaProcesos.addRow(datos);
-        }
-        
-        for (int i = 0; i < 10; i++){
-            Object[] datos = new Object[6];
-            datos[0] = "p"+i;
-            datos[1] = "USER";
-            datos[2] = i;
-            datos[3] = i+100;
-            datos[4] = 5;
-            datos[5] = 3;
-        
-            tablaProcesos.addRow(datos);
+            cantProcesosAuto++;
         }
         botonCargarProceso.setEnabled(true);
     }//GEN-LAST:event_botonGenerarProcesosActionPerformed
